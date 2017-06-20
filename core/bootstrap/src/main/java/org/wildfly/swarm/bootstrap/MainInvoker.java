@@ -1,18 +1,29 @@
 package org.wildfly.swarm.bootstrap;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URISyntaxException;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchEvent.Kind;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.wildfly.swarm.bootstrap.modules.BootModuleLoader;
+
+import static java.nio.file.StandardWatchEventKinds.*;
 
 /**
  * @author Bob McWhirter
@@ -38,6 +49,48 @@ public class MainInvoker {
     public void invoke() throws Exception {
         this.mainMethod.invoke(null, new Object[]{this.args});
         emitReady();
+        /*String processFile = System.getProperty("org.wildfly.swarm.container.processFile");
+
+        System.out.println("Process file " + processFile);
+        if (processFile != null) {
+            File uuidFile = new File(processFile);
+            register(uuidFile.getParentFile(), uuidFile.toPath());
+            processEvents(uuidFile.toPath());
+            stop();
+        }*/
+    }
+
+    public void stop() throws Exception {
+        Method stopMethod = null;
+        Class<?> mainClass = mainMethod.getDeclaringClass();
+        //if (this.mainClass.getClass().getName().equals("org.wildfly.swarm.Swarm")) {
+        try {
+            System.out.println("Declaring class:" + mainClass.getName());
+            stopMethod = mainClass.getDeclaredMethod("stopMain");
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+        //}
+
+        System.out.println("--------INVOKER STOOOOOOOOOPING");
+
+        if (stopMethod != null) {
+            stopMethod.invoke(mainClass, (Object[]) null);
+        }
+
+        System.out.println("--------INVOKER STOPPED");
+
+        //System.exit(0);
+
+        /*String processFile = System.getProperty("org.wildfly.swarm.container.processFile");
+
+        System.out.println("Process file " + processFile);
+        if (processFile != null) {
+            File uuidFile = new File(processFile);
+            register(uuidFile.getParentFile(), uuidFile.toPath());
+            processEvents(uuidFile.toPath());
+            stop();
+        }*/
     }
 
     protected void emitReady() throws Exception {
@@ -49,6 +102,64 @@ public class MainInvoker {
 
         Method ready = messages.getClass().getMethod("wildflySwarmIsReady");
         ready.invoke(messages);
+    }
+
+    private void register(File directory, Path file) throws IOException {
+        System.out.println("REGISTERING DIRECTORY " + directory);
+        watcher = FileSystems.getDefault().newWatchService();
+        keys = new HashMap<WatchKey,Path>();
+        WatchKey key = directory.toPath().register(watcher, ENTRY_DELETE);
+        keys.put(key, directory.toPath());
+        System.out.println("FILE REGISTERED");
+    }
+
+    private void processEvents(Path file) {
+        for (;;) {
+
+            System.out.println("PROCESSING EVENTS");
+            // wait for key to be signalled
+            WatchKey key;
+            try {
+                key = watcher.take();
+                System.out.println("SIGNAL FILE");
+            } catch (InterruptedException x) {
+                return;
+            }
+
+            Path dir = keys.get(key);
+            if (dir == null) {
+                System.err.println("WatchKey not recognized!!");
+                continue;
+            }
+
+            for (WatchEvent<?> event: key.pollEvents()) {
+                Kind<?> kind = event.kind();
+
+                // Context for directory entry event is the file name of entry
+                WatchEvent<Path> ev = cast(event);
+                Path name = ev.context();
+                Path child = dir.resolve(name);
+
+                // print out event
+                System.out.format("%s: %s\n", event.kind().name(), child);
+
+                if (kind == ENTRY_DELETE && child.equals(file)) {
+                    System.out.println("FILE DELETED");
+                    return;
+                }
+            }
+
+            // reset key and remove from set if directory no longer accessible
+            boolean valid = key.reset();
+            if (!valid) {
+                keys.remove(key);
+
+                // all directories are inaccessible
+                if (keys.isEmpty()) {
+                    break;
+                }
+            }
+        }
     }
 
     public static void main(String... args) throws Exception {
@@ -66,7 +177,7 @@ public class MainInvoker {
 
         Method mainMethod = getMainMethod(mainClass);
 
-        MainInvoker wrapper = new MainInvoker(mainMethod, actualArgs.toArray(new String[]{}));
+        wrapper = new MainInvoker(mainMethod, actualArgs.toArray(new String[]{}));
         wrapper.invoke();
     }
 
@@ -101,7 +212,18 @@ public class MainInvoker {
         return mainMethod;
     }
 
+    @SuppressWarnings("unchecked")
+    private <T> WatchEvent<T> cast(WatchEvent<?> event) {
+        return (WatchEvent<T>)event;
+    }
+
     private final Method mainMethod;
 
     private final String[] args;
+
+    private WatchService watcher;
+
+    private Map<WatchKey,Path> keys;
+
+    private static MainInvoker wrapper;
 }

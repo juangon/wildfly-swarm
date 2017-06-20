@@ -18,6 +18,7 @@ package org.wildfly.swarm.arquillian.adapter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+//import java.io.File;
 
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
@@ -31,6 +32,7 @@ import org.jboss.shrinkwrap.descriptor.api.Descriptor;
 import org.wildfly.swarm.arquillian.StartupTimeout;
 import org.wildfly.swarm.arquillian.daemon.container.DaemonContainerConfigurationBase;
 import org.wildfly.swarm.arquillian.daemon.container.DaemonDeployableContainerBase;
+//import org.wildfly.swarm.bootstrap.util.TempFileManager;
 
 /**
  * @author Bob McWhirter
@@ -70,12 +72,24 @@ public class WildFlySwarmContainer extends DaemonDeployableContainerBase<DaemonC
             setTimeout(startupTimeout.value());
         }
 
+        System.out.println("--------START WILDFLYSWARM CONTAINER");
 
         this.delegateContainer = new UberjarSimpleContainer(this.containerContext.get(), this.deploymentContext.get(), this.testClass);
 
         try {
+            String javaVMArguments = this.getJavaVmArguments();
+            /*processFile = File.createTempFile("swarmprocessfile", null);
+            processFile.deleteOnExit();
+            System.out.println("----CREATED processFile:" + processFile.getAbsolutePath());
+            if (javaVMArguments == null) {
+                javaVMArguments = "";
+            }
+
+            javaVMArguments = javaVMArguments + " -Dorg.wildfly.swarm.container.processFile=" + processFile.getAbsolutePath();
+            System.out.println("JAVAVM ARGUMENTS:" + javaVMArguments);
+            System.setProperty("org.wildfly.swarm.container.processFile", processFile.getAbsolutePath());*/
             this.delegateContainer
-                    .setJavaVmArguments(this.getJavaVmArguments())
+                    .setJavaVmArguments(javaVMArguments)
                     .requestedMavenArtifacts(this.requestedMavenArtifacts)
                     .start(archive);
             // start wants to connect to the remote container, which isn't up until now, so
@@ -94,7 +108,12 @@ public class WildFlySwarmContainer extends DaemonDeployableContainerBase<DaemonC
     @Override
     public void undeploy(Archive<?> archive) throws DeploymentException {
         try {
+            System.out.println("--------STOP WILDFLYSWARM CONTAINER");
+            //processFile.delete();
+            //super.stop();
             this.delegateContainer.stop();
+            //TempFileManager.INSTANCE.close();
+            System.out.println("--------STOPPED WILDFLYSWARM CONTAINER");
         } catch (Exception e) {
             throw new DeploymentException("Unable to stop process", e);
         }
@@ -113,4 +132,6 @@ public class WildFlySwarmContainer extends DaemonDeployableContainerBase<DaemonC
     private SimpleContainer delegateContainer;
 
     private Class<?> testClass;
+
+    //private File processFile;
 }

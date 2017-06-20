@@ -64,6 +64,7 @@ public abstract class DaemonDeployableContainerBase<CONFIGTYPE extends DaemonCon
         // Open up remote resources
         try {
 
+            System.out.println("--------START DAEMON CONTAINER BASE");
             final long startTime = System.currentTimeMillis();
             final int secondsToWait = this.timeout;
             final long acceptableTime = startTime + 1000 * secondsToWait; // 10 seconds from now
@@ -121,7 +122,9 @@ public abstract class DaemonDeployableContainerBase<CONFIGTYPE extends DaemonCon
      */
     @Override
     public void stop() throws LifecycleException {
+        System.out.println("--------STOP DAEMON CONTAINER BASE");
         this.closeRemoteResources();
+        System.out.println("--------STOPPED DAEMON CONTAINER BASE");
     }
 
     /**
@@ -185,33 +188,47 @@ public abstract class DaemonDeployableContainerBase<CONFIGTYPE extends DaemonCon
     private void closeRemoteResources() {
         if (reader != null) {
             try {
+                System.out.println("DAEMONDEPLOYABLEBASE CLOSING READER");
                 reader.close();
+                System.out.println("DAEMONDEPLOYABLEBASE CLOSED READER");
             } catch (final IOException ignore) {
+               ignore.printStackTrace();
             }
             reader = null;
         }
         if (writer != null) {
+            System.out.println("DAEMONDEPLOYABLEBASE CLOSING WRITER");
             writer.close();
+            System.out.println("DAEMONDEPLOYABLEBASE CLOSED WRITER");
             writer = null;
         }
         if (socketOutstream != null) {
             try {
+                System.out.println("DAEMONDEPLOYABLEBASE CLOSING SOCKETOUTPUTSTREAM");
                 socketOutstream.close();
+                System.out.println("DAEMONDEPLOYABLEBASE CLOSED SOCKETOUTPUTSTREAM");
             } catch (final IOException ignore) {
+               ignore.printStackTrace();
             }
             socketOutstream = null;
         }
         if (socketInstream != null) {
             try {
+                System.out.println("DAEMONDEPLOYABLEBASE CLOSING SOCKETINPUTSTREAM");
                 socketInstream.close();
+                System.out.println("DAEMONDEPLOYABLEBASE CLOSED SOCKETINPUTSTREAM");
             } catch (final IOException ignore) {
+               ignore.printStackTrace();
             }
             socketInstream = null;
         }
         if (socket != null) {
             try {
+                System.out.println("DAEMONDEPLOYABLEBASE CLOSING SOCKET");
                 socket.close();
+                System.out.println("DAEMONDEPLOYABLEBASE CLOSED SOCKETINPUTSTREAM");
             } catch (final IOException ignore) {
+               ignore.printStackTrace();
             }
             socket = null;
         }

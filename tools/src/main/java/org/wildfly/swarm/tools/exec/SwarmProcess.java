@@ -15,6 +15,7 @@
  */
 package org.wildfly.swarm.tools.exec;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Path;
@@ -26,11 +27,16 @@ import java.util.concurrent.TimeUnit;
  */
 public class SwarmProcess {
 
-    public SwarmProcess(Process process, OutputStream stdout, Path stdoutFile, OutputStream stderr, Path stderrFile) throws IOException {
+    public SwarmProcess(Process process, File processFile, OutputStream stdout, Path stdoutFile, OutputStream stderr, Path stderrFile) throws IOException {
         this.process = process;
         this.latch = new CountDownLatch(1);
         this.stdout = new IOBridge(this.latch, process.getInputStream(), stdout, stdoutFile);
         this.stderr = new IOBridge(this.latch, process.getErrorStream(), stderr, stderrFile);
+        this.processFile = processFile;
+
+        if (processFile != null) {
+            System.out.println("Process file in Swarm process:" + processFile);
+        }
 
         new Thread(this.stdout).start();
         new Thread(this.stderr).start();
@@ -96,20 +102,42 @@ public class SwarmProcess {
     }
 
     public int stop(long timeout, TimeUnit timeUnit) throws InterruptedException {
-        this.process.destroy();
-        if (!this.process.waitFor(timeout, timeUnit)) {
-            process.destroyForcibly();
+
+        if (this.processFile != null) {
+            System.out.println("----DELETING FILE IN SWARM PROCESS:" + processFile.getAbsolutePath());
+            this.processFile.delete();
+            System.out.println("----FILE DELETED IN SWARM PROCESS");
+            while (true) {
+                if (!process.isAlive()) {
+                    System.out.println("BREAK SWARM PROCESS");
+                    break;
+                }
+            }
+        } else {
+            this.process.destroy();
         }
+
+        System.out.println("Process status:" + this.process.exitValue());
+
         try {
+            System.out.println("Closing stdout");
             this.stdout.close();
+            System.out.println("stdout closed");
         } catch (IOException e) {
-            // ignore
+            e.printStackTrace();
         }
 
         try {
+            System.out.println("Closing sterr");
             this.stderr.close();
+            System.out.println("stderr closed");
         } catch (IOException e) {
-            // ignore
+            e.printStackTrace();
+        }
+
+        if (!this.process.waitFor(timeout, timeUnit)) {
+            System.out.println("Destroying forcibly");
+            process.destroyForcibly();
         }
 
         if (!process.isAlive()) {
@@ -126,4 +154,6 @@ public class SwarmProcess {
     private final IOBridge stderr;
 
     private final CountDownLatch latch;
+
+    private File processFile;
 }

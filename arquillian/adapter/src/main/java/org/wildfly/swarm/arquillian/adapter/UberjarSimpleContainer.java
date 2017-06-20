@@ -92,6 +92,8 @@ public class UberjarSimpleContainer implements SimpleContainer {
     @Override
     public void start(Archive<?> archive) throws Exception {
 
+        System.out.println("---STARTING UBERJARSIMPLECONTAINER");
+
         archive.add(EmptyAsset.INSTANCE, "META-INF/arquillian-testable");
 
         ContextRoot contextRoot = null;
@@ -279,6 +281,20 @@ public class UberjarSimpleContainer implements SimpleContainer {
         }
 
         executor.withProperty("java.net.preferIPv4Stack", "true");
+
+        processFile = File.createTempFile("mainprocessfile", null);
+        processFile.deleteOnExit();
+
+        System.out.println("----CREATED mainProcessFile:" + processFile.getAbsolutePath());
+        //executor.withProperty("org.wildfly.swarm.container.processFile", processFile.getAbsolutePath());
+
+        executor.withProcessFile(processFile);
+        //executor.withProperty("org.wildfly.swarm.mainProcessFile", processFile.getAbsolutePath());
+/*        if (processFileStr != null) {
+            processFile = new File(processFileStr);
+            System.out.println("---UBERJARCONTAINER Process file " + processFile);
+        }*/
+
         executor.withJVMArguments(getJavaVmArgumentsList());
         executor.withExecutableJar(executable.toPath());
 
@@ -286,7 +302,7 @@ public class UberjarSimpleContainer implements SimpleContainer {
         executor.withWorkingDirectory(workingDirectory.toPath());
 
         this.process = executor.execute();
-        this.process.getOutputStream().close();
+        //this.process.getOutputStream().close();
 
         this.process.awaitReadiness(2, TimeUnit.MINUTES);
 
@@ -337,7 +353,20 @@ public class UberjarSimpleContainer implements SimpleContainer {
 
     @Override
     public void stop() throws Exception {
+        System.out.println("----STOPPING UBERJARSIMPLECONTAINER");
+        //processFile.delete();
+
         this.process.stop();
+        System.out.println("----STOPPED UBERJARSIMPLECONTAINER");
+//        while (true) {
+//            //System.out.println("EVALUATING UBERJARSIMPLECONTAINER");
+//            if (!process.isAlive()) {
+//                System.out.println("BREAK UBERJARSIMPLECONTAINER");
+//                //this.process.stop();
+//                break;
+//            }
+//        }
+      //this.process.stop();
     }
 
     private String ga(final MavenCoordinate coord) {
@@ -376,6 +405,8 @@ public class UberjarSimpleContainer implements SimpleContainer {
     private Set<String> requestedMavenArtifacts = new HashSet<>();
 
     private String javaVmArguments;
+
+    private File processFile;
 
 }
 

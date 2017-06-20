@@ -74,7 +74,10 @@ public class TempFileManager {
             }
         }
 
-        file.delete();
+        boolean deleted = file.delete();
+        if (!deleted) {
+            System.out.println("Delete result " + deleted + " of file " + file.getAbsolutePath());
+        }
     }
 
     private Set<File> registered = Collections.newSetFromMap(new ConcurrentHashMap<>());

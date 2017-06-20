@@ -32,8 +32,10 @@ public class DaemonService implements Service<Server> {
         int port = Integer.getInteger(SwarmProperties.ARQUILLIAN_DAEMON_PORT, 12345);
 
         try {
+            System.out.println("----STARTING ARQUILIAN DAEMON SERVER");
             this.server = Server.create("localhost", port);
             this.server.start();
+            System.out.println("----STARTED ARQUILIAN DAEMON SERVER");
         } catch (Exception e) {
             // this shouldn't be possible per Java control flow rules, but there is a "sneaky throw" somewhere
             //noinspection ConstantConditions
@@ -50,6 +52,7 @@ public class DaemonService implements Service<Server> {
     @Override
     public void stop(StopContext context) {
         try {
+            System.out.println("----STOPPING ARQUILIAN DAEMON SERVER");
             this.server.stop();
         } catch (ServerLifecycleException e) {
             throw new RuntimeException(e);
@@ -63,6 +66,7 @@ public class DaemonService implements Service<Server> {
 
     static void addService(ServiceTarget serviceTarget) {
 
+        System.out.println("----ADDING SERVICE");
         DaemonService daemon = new DaemonService();
         serviceTarget
                 .addService(SERVICE_NAME, daemon)

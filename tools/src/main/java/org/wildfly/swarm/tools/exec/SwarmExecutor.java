@@ -206,10 +206,22 @@ public class SwarmExecutor {
         return this;
     }
 
+    public SwarmExecutor withProcessFile(File processFile) {
+        this.processFile = processFile;
+        withProperty("org.wildfly.swarm.mainProcessFile", processFile.getAbsolutePath());
+        return this;
+    }
+
     public SwarmProcess execute() throws IOException {
         if (this.executable == null) {
             throw new RuntimeException("An executable jar or a main-class must be specified");
         }
+
+        //File processFile = TempFileManager.INSTANCE.newTempFile("swarmprocessfile", null);
+        /*File processFile = File.createTempFile("swarmprocessfile", null);
+        processFile.deleteOnExit();
+
+        this.properties.put("org.wildfly.swarm.container.processFile", processFile.getAbsolutePath());*/
 
         List<String> cli = new ArrayList<>();
 
@@ -243,7 +255,7 @@ public class SwarmExecutor {
         Process process = processBuilder.start();
 
         return new SwarmProcess(
-                process,
+                process, processFile,
                 this.stdout, this.stdoutFile,
                 this.stderr, this.stderrFile);
     }
@@ -294,5 +306,7 @@ public class SwarmExecutor {
     private Path workingDirectory;
 
     private Integer debugPort;
+
+    private File processFile;
 
 }

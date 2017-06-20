@@ -125,9 +125,23 @@ public class ApplicationModuleFinder extends AbstractSingleModuleFinder {
         }
 
         File tmp = TempFileManager.INSTANCE.newTempFile(name, ext);
-
-        try (InputStream artifactIn = getClass().getClassLoader().getResourceAsStream(path)) {
+        //File tmp = File.createTempFile(name, ext);
+        //tmp.deleteOnExit();
+        //OutputStream out = new FileOutputStream(tmp);
+        InputStream artifactIn = getClass().getClassLoader().getResourceAsStream(path);
+        try {
+            //IOUtil.copy(artifactIn, new FileOutputStream(tmp));
+            //copyFile(artifactIn, tmp);
             Files.copy(artifactIn, tmp.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        } finally {
+            /*try {
+                out.close();
+            } catch (IOException e) {
+            }*/
+            try {
+                artifactIn.close();
+            } catch (IOException e) {
+            }
         }
         final String jarName = tmp.getName().toString();
         final JarFile jarFile = new JarFile(tmp);
@@ -177,6 +191,28 @@ public class ApplicationModuleFinder extends AbstractSingleModuleFinder {
                     }
                 });
     }
+
+    /*protected static void copyFile(final InputStream in, final File dest) throws IOException {
+        dest.getParentFile().mkdirs();
+        byte[] buff = new byte[1024];
+        final OutputStream out = new BufferedOutputStream(new FileOutputStream(dest));
+        try {
+            int i = in.read(buff);
+            while (i > 0) {
+                out.write(buff, 0, i);
+                i = in.read(buff);
+            }
+        } finally {
+            close(out);
+        }
+    }
+
+    protected static void close(Closeable closeable) {
+      try {
+          closeable.close();
+       } catch (IOException ignore) {
+       }
+    }*/
 
     private static final BootstrapLogger LOG = BootstrapLogger.logger("org.wildfly.swarm.modules.application");
 }

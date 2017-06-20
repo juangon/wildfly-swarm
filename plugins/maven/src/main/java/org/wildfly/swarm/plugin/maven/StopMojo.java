@@ -44,6 +44,7 @@ public class StopMojo extends AbstractMojo {
             return;
         }
 
+        getLog().info("STOPPING MOJO");
         List<SwarmProcess> value = (List<SwarmProcess>) getPluginContext().get("swarm-process");
 
         if (value == null) {

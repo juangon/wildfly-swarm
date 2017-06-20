@@ -59,16 +59,30 @@ public class IOBridge implements Runnable, Closeable {
         } catch (IOException e) {
             this.error = e;
             this.latch.countDown();
+        } finally {
+            try {
+                System.out.println("cLOSING READER");
+                reader.close();
+                System.out.println("READER closed");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
     @Override
     public void close() throws IOException {
         try {
+            System.out.println("IOBridge in closing");
             this.in.close();
+            System.out.println("IOBridge in closed");
         } finally {
+            this.out.close();
+            System.out.println("IOBridge closed out");
             if (this.fileOut != null) {
+                System.out.println("IOBridge closing fileOut");
                 this.fileOut.close();
+                System.out.println("IOBridge closed fileOut");
             }
         }
     }

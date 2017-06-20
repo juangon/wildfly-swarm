@@ -107,6 +107,8 @@ public class Server {
 
     public final void start() throws ServerLifecycleException, IllegalStateException {
 
+        System.out.println("----STARTING SERVER BY START()");
+
         // Precondition checks
         if (this.isRunning()) {
             throw new IllegalStateException("Already running");
@@ -158,6 +160,9 @@ public class Server {
     }
 
     public final synchronized void stop() throws ServerLifecycleException, IllegalStateException {
+
+        System.out.println("----STOPPING SERVER BY STOP()");
+
         // Use an anonymous logger because the JUL LogManager will not log after process shutdown has been received
         final Logger log = Logger.getAnonymousLogger();
         log.addHandler(new Handler() {
@@ -188,11 +193,15 @@ public class Server {
             log.info("Requesting shutdown...");
         }
 
+        System.out.println("----STOPPING SERVER NETTY");
+
         this.eventLoopGroups.forEach(EventLoopGroup::shutdownGracefully);
         this.eventLoopGroups.clear();
 
+        System.out.println("----STOPPING SERVER shutdownNow");
         // Kill the shutdown service
         shutdownService.shutdownNow();
+        //shutdownService.shutdown();
         shutdownService = null;
 
         // Not running
@@ -250,7 +259,7 @@ public class Server {
      * Asynchronously calls upon {@link Server#stop()}
      */
     protected final void stopAsync() {
-
+        System.out.println("----STOPASYNC-------------");
         shutdownService.submit(() -> {
             Server.this.stop();
             return null;
@@ -324,7 +333,7 @@ public class Server {
             try {
                 // Stop
                 if (WireProtocol.COMMAND_STOP.equals(message)) {
-
+                    System.out.println("----RECEIVED STOP COMMAND");
                     // Set the response to tell the client OK
                     Server.sendResponse(ctx, WireProtocol.RESPONSE_OK_PREFIX + message)
                             .addListener(future -> Server.this.stopAsync());

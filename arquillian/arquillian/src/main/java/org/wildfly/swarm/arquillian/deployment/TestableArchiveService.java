@@ -26,12 +26,19 @@ public class TestableArchiveService implements Service<Void> {
 
     @Override
     public void start(StartContext startContext) throws StartException {
+        System.out.println("-----------START TESTABLEARCHIVESERICE");
         this.serverInjector.getValue().setDeploymentUnit(this.deploymentUnitInjector.getValue());
     }
 
     @Override
     public void stop(StopContext stopContext) {
-
+        System.out.println("-----------STOP TESTABLEARCHIVESERICE");
+        /*try {
+            this.serverInjector.getValue().stop();
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }*/
     }
 
     @Override

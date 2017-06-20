@@ -15,17 +15,26 @@
  */
 package org.wildfly.swarm;
 
+//import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
+
+//import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+//import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+//import java.nio.file.WatchEvent;
+//import java.nio.file.WatchKey;
+//import java.nio.file.WatchService;
+//import java.nio.file.WatchEvent.Kind;
 import java.util.ArrayList;
+//import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +42,8 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
+//import java.util.concurrent.ExecutorService;
+//import java.util.concurrent.Executors;
 import java.util.jar.JarFile;
 import java.util.logging.LogManager;
 import java.util.stream.Collectors;
@@ -350,6 +361,8 @@ public class Swarm {
      * @throws Exception if an error occurs.
      */
     public Swarm start() throws Exception {
+        System.out.println("---SWARM START");
+
         try (AutoCloseable handle = Performance.time("Swarm.start()")) {
 
             Module module = Module.getBootModuleLoader().loadModule(ModuleIdentifier.create(CONTAINER_MODULE_NAME));
@@ -394,6 +407,9 @@ public class Swarm {
      * @throws Exception If an error occurs.
      */
     public Swarm stop() throws Exception {
+
+        System.out.println("----SWARM STOP");
+
         if (this.server == null) {
             throw SwarmMessages.MESSAGES.containerNotStarted("stop()");
         }
@@ -604,6 +620,64 @@ public class Swarm {
         }
     }
 
+//    private static void register(File directory, Path file) throws IOException {
+//        System.out.println("REGISTERING DIRECTORY " + directory);
+//        watcher = FileSystems.getDefault().newWatchService();
+//        keys = new HashMap<WatchKey,Path>();
+//        WatchKey key = directory.toPath().register(watcher, ENTRY_DELETE);
+//        keys.put(key, directory.toPath());
+//        System.out.println("FILE REGISTERED");
+//    }
+//
+//    private static void processEvents(Path file) {
+//        for (;;) {
+//
+//            System.out.println("PROCESSING EVENTS");
+//            // wait for key to be signalled
+//            WatchKey key;
+//            try {
+//                key = watcher.take();
+//                System.out.println("SIGNAL FILE");
+//            } catch (InterruptedException x) {
+//                return;
+//            }
+//
+//            Path dir = keys.get(key);
+//            if (dir == null) {
+//                System.err.println("WatchKey not recognized!!");
+//                continue;
+//            }
+//
+//            for (WatchEvent<?> event: key.pollEvents()) {
+//                Kind<?> kind = event.kind();
+//
+//                // Context for directory entry event is the file name of entry
+//                WatchEvent<Path> ev = (WatchEvent<Path>)event;
+//                Path name = ev.context();
+//                Path child = dir.resolve(name);
+//
+//                // print out event
+//                System.out.format("%s: %s\n", event.kind().name(), child);
+//
+//                if (kind == ENTRY_DELETE && child.equals(file)) {
+//                    System.out.println("FILE DELETED");
+//                    return;
+//                }
+//            }
+//
+//            // reset key and remove from set if directory no longer accessible
+//            boolean valid = key.reset();
+//            if (!valid) {
+//                keys.remove(key);
+//
+//                // all directories are inaccessible
+//                if (keys.isEmpty()) {
+//                    break;
+//                }
+//            }
+//        }
+//    }
+
     /**
      * Main entry-point if a user does not specify a custom {@code main(...)}-containing class.
      *
@@ -618,7 +692,33 @@ public class Swarm {
             System.setProperty(BOOT_MODULE_PROPERTY, "org.wildfly.swarm.bootstrap.modules.BootModuleLoader");
         }
 
-        Swarm swarm = new Swarm(args);
+        System.out.println("---SWARM MAIN");
+
+        swarm = new Swarm(args);
+
+        /*String processFile = System.getProperty("org.wildfly.swarm.container.processFile");
+
+        System.out.println("Process file " + processFile);
+        if (processFile != null) {
+            shutdownService = Executors.newSingleThreadExecutor();
+            shutdownService.submit(() -> {
+                File uuidFile = new File(processFile);
+                try {
+                    register(uuidFile.getParentFile(), uuidFile.toPath());
+                    processEvents(uuidFile.toPath());
+                    if (swarm != null) {
+                        swarm.stop();
+                    }
+                    shutdownService.shutdownNow();
+                    System.exit(0);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return null;
+                }
+            );
+        }*/
+
         try {
             swarm.start().deploy();
         } catch (final VirtualMachineError vme) {
@@ -629,6 +729,21 @@ public class Swarm {
             tryToStopAfterStartupError(t, swarm);
             throw t;
         }
+    }
+
+    public static void stopMain() throws Exception {
+       try {
+            System.out.println("------STOOOOOPING SWARM MAIN");
+            if (swarm != null) {
+                System.out.println("------CALLING SWARM.STOP");
+                swarm.stop();
+                System.out.println("------CALLED SWARM.STOP");
+            }
+            //shutdownService.shutdownNow();
+            System.out.println("------STOOPPED SWARM MAIN");
+            //System.exit(0);
+       } catch (Exception e) {
+       }
     }
 
     private static void tryToStopAfterStartupError(final Throwable errorCause, final Swarm swarm) {
@@ -762,4 +877,11 @@ public class Swarm {
 
     private boolean isConstructing = true;
 
+   /* private static WatchService watcher;
+
+    private static Map<WatchKey,Path> keys;
+
+    private static ExecutorService shutdownService;*/
+
+    private static Swarm swarm;
 }

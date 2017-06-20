@@ -251,6 +251,7 @@ public class RuntimeServer implements Server {
     }
 
     public void stop() throws Exception {
+        System.out.println("-------RUNTIMESERVER STOP");
         this.container.stop();
         awaitContainerTermination();
         this.containerStarted = false;
@@ -258,6 +259,7 @@ public class RuntimeServer implements Server {
         this.client = null;
         this.deployer.get().removeAllContent();
         this.deployer = null;
+        System.out.println("-------RUNTIMESERVER STOPPED");
     }
 
     private void awaitContainerTermination() {
