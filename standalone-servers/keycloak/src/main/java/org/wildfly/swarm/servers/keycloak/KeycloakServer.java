@@ -7,10 +7,16 @@ import org.wildfly.swarm.Swarm;
  */
 public class KeycloakServer {
 
+    private static Swarm swarm;
+
     protected KeycloakServer() {
     }
 
     public static void main(String... args) throws Exception {
-        (new Swarm(args)).start();
+        swarm = (new Swarm(args)).start();
+    }
+
+    public static void stopMain() throws Exception {
+        swarm.stop();
     }
 }

@@ -279,6 +279,12 @@ public class UberjarSimpleContainer implements SimpleContainer {
         }
 
         executor.withProperty("java.net.preferIPv4Stack", "true");
+
+        File processFile = File.createTempFile("mainprocessfile", null);
+        processFile.deleteOnExit();
+
+        executor.withProcessFile(processFile);
+
         executor.withJVMArguments(getJavaVmArgumentsList());
         executor.withExecutableJar(executable.toPath());
 
