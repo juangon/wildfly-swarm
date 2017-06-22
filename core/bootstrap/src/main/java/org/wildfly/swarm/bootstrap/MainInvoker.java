@@ -32,6 +32,8 @@ public class MainInvoker {
 
     private static final String BOOT_MODULE_PROPERTY = "boot.module.loader";
 
+    private static MainInvoker wrapper;
+
     public MainInvoker(Method mainMethod, String... args) {
         this.mainMethod = mainMethod;
         this.args = args;
@@ -224,6 +226,4 @@ public class MainInvoker {
     private WatchService watcher;
 
     private Map<WatchKey,Path> keys;
-
-    private static MainInvoker wrapper;
 }

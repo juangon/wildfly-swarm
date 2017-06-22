@@ -107,14 +107,25 @@ public class SwarmProcess {
             System.out.println("----DELETING FILE IN SWARM PROCESS:" + processFile.getAbsolutePath());
             this.processFile.delete();
             System.out.println("----FILE DELETED IN SWARM PROCESS");
+            long timeoutMillis = timeUnit.toMillis(timeout);
+            System.out.println("timeout:" + timeout + " timeunit" + timeUnit.toString() + " converted:" + timeoutMillis);
+            long initialTimeMillis = System.currentTimeMillis();
             while (true) {
-                if (!process.isAlive()) {
+                long currentTimeMillis = System.currentTimeMillis();
+                if (!process.isAlive() || (currentTimeMillis - initialTimeMillis) > timeoutMillis) {
                     System.out.println("BREAK SWARM PROCESS");
                     break;
                 }
             }
+            if (process.isAlive()) {
+                process.destroyForcibly();
+            }
         } else {
             this.process.destroy();
+            if (!this.process.waitFor(timeout, timeUnit)) {
+                System.out.println("Destroying forcibly");
+                process.destroyForcibly();
+            }
         }
 
         System.out.println("Process status:" + this.process.exitValue());
@@ -133,11 +144,6 @@ public class SwarmProcess {
             System.out.println("stderr closed");
         } catch (IOException e) {
             e.printStackTrace();
-        }
-
-        if (!this.process.waitFor(timeout, timeUnit)) {
-            System.out.println("Destroying forcibly");
-            process.destroyForcibly();
         }
 
         if (!process.isAlive()) {

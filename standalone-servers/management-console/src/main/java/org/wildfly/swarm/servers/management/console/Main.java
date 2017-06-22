@@ -23,12 +23,18 @@ import org.wildfly.swarm.management.console.ManagementConsoleFraction;
  */
 public class Main {
 
+    private static Swarm container;
+
     protected Main() {
     }
 
     public static void main(String... args) throws Exception {
-        Swarm container = new Swarm();
+        container = new Swarm();
         container.fraction(new ManagementConsoleFraction());
         container.start();
+    }
+
+    public static void stopMain() throws Exception {
+        container.stop();
     }
 }

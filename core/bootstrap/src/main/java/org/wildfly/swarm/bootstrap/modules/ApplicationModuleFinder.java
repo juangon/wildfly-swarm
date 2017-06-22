@@ -15,11 +15,18 @@
  */
 package org.wildfly.swarm.bootstrap.modules;
 
+import java.io.BufferedOutputStream;
+import java.io.Closeable;
 import java.io.File;
+//import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
+import java.io.OutputStream;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import org.jboss.modules.DependencySpec;
@@ -31,11 +38,14 @@ import org.jboss.modules.ResourceLoader;
 import org.jboss.modules.ResourceLoaderSpec;
 import org.jboss.modules.ResourceLoaders;
 import org.jboss.modules.filter.ClassFilters;
+import org.jboss.modules.filter.PathFilter;
 import org.jboss.modules.filter.PathFilters;
 import org.jboss.modules.maven.ArtifactCoordinates;
 import org.wildfly.swarm.bootstrap.env.ApplicationEnvironment;
 import org.wildfly.swarm.bootstrap.logging.BootstrapLogger;
 import org.wildfly.swarm.bootstrap.util.TempFileManager;
+//import org.wildfly.swarm.bootstrap.util.TempFileManager;
+//import org.wildfly.swarm.bootstrap.util.TempFileManager;
 
 /**
  * Module-finder used only for loading the module <code>swarm.application</code> when run in an fat-jar scenario.
@@ -124,36 +134,119 @@ public class ApplicationModuleFinder extends AbstractSingleModuleFinder {
             name = name.substring(0, dotLoc);
         }
 
-        File tmp = TempFileManager.INSTANCE.newTempFile(name, ext);
+        //File tmp = TempFileManager.INSTANCE.newTempFile(name, ext);
+        File tmp = File.createTempFile(name, ext);
+        //File tmp = TempFileManager.INSTANCE.newTempDirectory(name, ext);
         //File tmp = File.createTempFile(name, ext);
         //tmp.deleteOnExit();
         //OutputStream out = new FileOutputStream(tmp);
-        InputStream artifactIn = getClass().getClassLoader().getResourceAsStream(path);
-        try {
+
+        try (InputStream artifactIn = getClass().getClassLoader().getResourceAsStream(path)) {
             //IOUtil.copy(artifactIn, new FileOutputStream(tmp));
-            //copyFile(artifactIn, tmp);
-            Files.copy(artifactIn, tmp.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        } finally {
-            /*try {
-                out.close();
-            } catch (IOException e) {
-            }*/
-            try {
-                artifactIn.close();
-            } catch (IOException e) {
-            }
+            copyFile(artifactIn, tmp);
+            //Files.copy(artifactIn, tmp.toPath(), StandardCopyOption.REPLACE_EXISTING);
         }
+
         final String jarName = tmp.getName().toString();
         final JarFile jarFile = new JarFile(tmp);
-        final ResourceLoader jarLoader = ResourceLoaders.createJarResourceLoader(jarName,
-                                                                                 jarFile);
-        builder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(jarLoader));
 
         if (".war".equalsIgnoreCase(ext)) {
-            final ResourceLoader warLoader = ResourceLoaders.createJarResourceLoader(jarName,
-                                                                                     jarFile,
-                                                                                     "WEB-INF/classes");
+
+            File tmpDir = TempFileManager.INSTANCE.newTempDirectory(name, ext);
+            explodeJar(jarFile, tmpDir.getAbsolutePath(), null);
+
+            jarFile.close();
+            tmp.delete();
+
+            /*final ResourceLoader warLoader = ResourceLoaders.createJarResourceLoader(
+                    jarName, jarFile, "WEB-INF/classes");
             builder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(warLoader));
+
+            final ResourceLoader jarLoader = ResourceLoaders.createJarResourceLoader("",
+                    jarFile);
+            builder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(jarLoader));*/
+
+            /*
+             final ResourceLoader warLoader = ResourceLoaders.createJarResourceLoader("",
+                                                                                     jarFile,
+                                                                                    "WEB-INF/classes");
+              builder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(warLoader));
+
+              final ResourceLoader jarLoader = ResourceLoaders.createJarResourceLoader("2",
+                    jarFile2, "");
+            builder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(jarLoader));*/
+
+            /*final ResourceLoader jarLoader = ResourceLoaders.createJarResourceLoader("2",
+                    jarFile);
+            builder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(jarLoader));
+
+            final ResourceLoader warLoader = ResourceLoaders.createJarResourceLoader("",
+                                                                                     jarFile,
+                                                                                    "WEB-INF/classes");
+            builder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(warLoader));*/
+
+            /*final ResourceLoader originalResourceLoader = ResourceLoaders.createJarResourceLoader(jarFile.getName(),
+                    jarFile);
+
+            final ResourceLoader filteredResourceLoader = ResourceLoaders.createFilteredResourceLoader(getModuleFilter(jarFile), originalResourceLoader);
+
+            builder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(filteredResourceLoader));*/
+
+            System.out.println("WAR LOADER ROOT:" + tmpDir.getAbsolutePath() + File.separator + "WEB-INF" + File.separator + "classes");
+            final ResourceLoader warLoader = ResourceLoaders.createFileResourceLoader(jarName,
+                    new File(tmpDir.getAbsolutePath() + File.separator + "WEB-INF" + File.separator + "classes"));
+            builder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(warLoader));
+
+            final ResourceLoader jarLoader = ResourceLoaders.createFileResourceLoader("", tmpDir);
+            builder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(jarLoader));
+
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+               //try {
+                    System.out.println(".--------YEAAAAAH2");
+                    //jarLoader.close();
+                    //originalResourceLoader.close();
+                    //jarFile.close();
+                    //jarFile2.close();
+                    /*while (tmp.exists()) {
+                        tmp.delete();
+                        try {
+                            Thread.sleep(200);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }*/
+                    System.out.println(".--------YEAAAAAH2 BORRADO2 FICHERO 1 "/* + tmp.delete()*/);
+                    //System.out.println(".--------YEAAAAAH2 BORRADO2 FICHERO 2 " + tmp2.delete());
+                    //warLoader.close();
+                    /*jarFile2.close();
+                    tmp2.delete();*/
+                    System.out.println(".--------YEAAAAAH2 TERMINADO3 ");
+                //} catch (IOException e) {
+                    // TODO Auto-generated catch block
+                //    e.printStackTrace();
+                //}
+                 //System.out.println(".--------YEAAAAAH2 BORRANDO FICHERO");
+                //while (tmp.exists()) {
+                //}
+                System.out.println(".--------YEAAAAAH2 FICHERO BORRADO");
+            }));
+
+        } else {
+            final ResourceLoader jarLoader = ResourceLoaders.createJarResourceLoader(jarName,
+                    jarFile);
+            builder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(jarLoader));
+
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                try {
+                    System.out.println(".--------YEAAAAAH");
+                    jarLoader.close();
+                    jarFile.close();
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                   e.printStackTrace();
+                }
+                tmp.delete();
+            }));
         }
 
     }
@@ -192,7 +285,7 @@ public class ApplicationModuleFinder extends AbstractSingleModuleFinder {
                 });
     }
 
-    /*protected static void copyFile(final InputStream in, final File dest) throws IOException {
+    protected static void copyFile(final InputStream in, final File dest) throws IOException {
         dest.getParentFile().mkdirs();
         byte[] buff = new byte[1024];
         final OutputStream out = new BufferedOutputStream(new FileOutputStream(dest));
@@ -212,7 +305,63 @@ public class ApplicationModuleFinder extends AbstractSingleModuleFinder {
           closeable.close();
        } catch (IOException ignore) {
        }
-    }*/
+    }
+
+    private void explodeJar(JarFile jarFile, String destdir, String rootDir) throws IOException {
+        Enumeration<java.util.jar.JarEntry> enu = jarFile.entries();
+        while (enu.hasMoreElements()) {
+            JarEntry je = enu.nextElement();
+
+            //System.out.println(je.getName());
+
+            File fl = new File(destdir, je.getName());
+            if (!fl.exists()) {
+                fl.getParentFile().mkdirs();
+                fl = new File(destdir, je.getName());
+            }
+            if (je.isDirectory()) {
+                continue;
+            }
+            InputStream is = null;
+            FileOutputStream fo = null;
+            try {
+                is = jarFile.getInputStream(je);
+                fo = new FileOutputStream(fl);
+                while (is.available() > 0) {
+                    fo.write(is.read());
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                if (fo != null) {
+                    fo.close();
+                }
+                if (is != null) {
+                    is.close();
+                }
+            }
+        }
+    }
+
+    private PathFilter getModuleFilter(JarFile jar) {
+        Set<String> paths = new HashSet<>();
+
+        Enumeration<JarEntry> jarEntries = jar.entries();
+
+        while (jarEntries.hasMoreElements()) {
+            JarEntry jarEntry = jarEntries.nextElement();
+            if (!jarEntry.isDirectory()) {
+                String name = jarEntry.getName();
+                System.out.println("Name:" + name);
+                if (name.startsWith("WEB-INF/classes") || name.startsWith("META-INF") ||
+                        !name.contains("/")) {
+                    paths.add(name);
+                }
+            }
+        }
+        System.out.println("Paths added:" + PathFilters.in(paths).toString());
+        return PathFilters.in(paths);
+    }
 
     private static final BootstrapLogger LOG = BootstrapLogger.logger("org.wildfly.swarm.modules.application");
 }

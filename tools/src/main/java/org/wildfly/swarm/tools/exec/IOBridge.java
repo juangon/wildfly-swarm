@@ -50,16 +50,15 @@ public class IOBridge implements Runnable, Closeable {
     @Override
     public void run() {
 
-        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
         String line = null;
-        try {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
             while ((line = reader.readLine()) != null) {
                 processLine(line);
             }
         } catch (IOException e) {
             this.error = e;
             this.latch.countDown();
-        } finally {
+        } /*finally {
             try {
                 System.out.println("cLOSING READER");
                 reader.close();
@@ -67,7 +66,7 @@ public class IOBridge implements Runnable, Closeable {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
+        }*/
     }
 
     @Override
@@ -77,7 +76,7 @@ public class IOBridge implements Runnable, Closeable {
             this.in.close();
             System.out.println("IOBridge in closed");
         } finally {
-            this.out.close();
+            //this.out.close();
             System.out.println("IOBridge closed out");
             if (this.fileOut != null) {
                 System.out.println("IOBridge closing fileOut");

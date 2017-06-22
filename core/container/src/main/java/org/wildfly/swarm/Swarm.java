@@ -141,6 +141,8 @@ public class Swarm {
 
     private static final String PROJECT_STAGES_FILE = "project-stages.yml";
 
+    private static Swarm swarm;
+
     private final CommandLine commandLine;
 
     /**
@@ -882,6 +884,4 @@ public class Swarm {
     private static Map<WatchKey,Path> keys;
 
     private static ExecutorService shutdownService;*/
-
-    private static Swarm swarm;
 }

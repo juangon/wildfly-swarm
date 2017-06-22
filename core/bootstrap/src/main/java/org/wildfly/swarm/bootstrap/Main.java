@@ -40,6 +40,14 @@ import org.wildfly.swarm.bootstrap.util.BootstrapProperties;
  */
 public class Main {
 
+    private static WatchService watcher;
+
+    private static Map<WatchKey,Path> keys;
+
+    private static ExecutorService shutdownService;
+
+    private static MainInvoker mainInvoker;
+
     public Main(String... args) throws Throwable {
         this.args = args;
     }
@@ -69,7 +77,6 @@ public class Main {
                         System.out.println("--------GONNNA EXIT");
                         System.exit(0);
                     } catch (Exception e) {
-                        // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
                     return null;
@@ -154,12 +161,4 @@ public class Main {
     }
 
     private final String[] args;
-
-    private static WatchService watcher;
-
-    private static Map<WatchKey,Path> keys;
-
-    private static ExecutorService shutdownService;
-
-    private static MainInvoker mainInvoker;
 }

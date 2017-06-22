@@ -23,14 +23,20 @@ import org.wildfly.swarm.swagger.webapp.SwaggerWebAppFraction;
  */
 public class Main {
 
+    private static Swarm container;
+
     protected Main() {
     }
 
     public static void main(String... args) throws Exception {
-        Swarm container = new Swarm();
+        container = new Swarm();
         SwaggerWebAppFraction fraction = new SwaggerWebAppFraction();
         fraction.addWebContent(System.getProperty("swarm.swagger.ui.resources"));
         container.fraction(fraction);
         container.start();
+    }
+
+    public static void stopMain() throws Exception {
+        container.stop();
     }
 }
