@@ -232,20 +232,30 @@ public class ApplicationModuleFinder extends AbstractSingleModuleFinder {
             }));
 
         } else {
-            final ResourceLoader jarLoader = ResourceLoaders.createJarResourceLoader(jarName,
-                    jarFile);
+
+            File tmpDir = TempFileManager.INSTANCE.newTempDirectory(name, ext);
+            explodeJar(jarFile, tmpDir.getAbsolutePath(), null);
+
+            jarFile.close();
+            tmp.delete();
+
+            final ResourceLoader jarLoader = ResourceLoaders.createFileResourceLoader("", tmpDir);
             builder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(jarLoader));
 
+            /*final ResourceLoader jarLoader = ResourceLoaders.createJarResourceLoader(jarName,
+                    jarFile);
+            builder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(jarLoader));*/
+
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                try {
+                //try {
                     System.out.println(".--------YEAAAAAH");
-                    jarLoader.close();
-                    jarFile.close();
-                } catch (IOException e) {
+                    //jarLoader.close();
+                    //jarFile.close();
+                //} catch (IOException e) {
                     // TODO Auto-generated catch block
-                   e.printStackTrace();
-                }
-                tmp.delete();
+                //   e.printStackTrace();
+                //}
+                //tmp.delete();
             }));
         }
 

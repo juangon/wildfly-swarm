@@ -56,7 +56,8 @@ public class AnnotationBasedMain {
             }
 
             boolean startEagerly = anno.startEagerly();
-            swarm = ((Swarm) method.invoke(null)).start().deploy();
+            swarm = ((Swarm) method.invoke(null));
+            swarm.start().deploy();
         }
 
     }

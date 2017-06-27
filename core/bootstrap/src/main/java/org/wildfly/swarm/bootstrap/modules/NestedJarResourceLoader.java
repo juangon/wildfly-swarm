@@ -16,6 +16,7 @@
 package org.wildfly.swarm.bootstrap.modules;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -131,33 +132,112 @@ public class NestedJarResourceLoader {
         Path exp = explodedJar(base);
 
         String urlString = base.toExternalForm();
+
         if (exp != null) {
             int endLoc = urlString.indexOf(JAR_SUFFIX);
             if (endLoc > 0) {
                 Path resourceRoot = exp.resolve(loaderPath);
                 if (!Files.isDirectory(resourceRoot) && (resourceRoot.getFileName().toString().endsWith(".jar") || resourceRoot.getFileName().toString().endsWith(".war"))) {
-                    JarFile jar = new JarFile(resourceRoot.toFile());
-                    return ResourceLoaders.createJarResourceLoader(loaderName, jar);
+                    System.out.println("CASO 1:" + resourceRoot);
+                    final File file = resourceRoot.toFile();
+                    final JarFile jarFile = new JarFile(file);
+
+                    File tmpDir = TempFileManager.INSTANCE.newTempDirectory("nestedjarloader", null);
+                    explodeJar(jarFile, tmpDir.getAbsolutePath(), null);
+
+                    jarFile.close();
+                    file.delete();
+
+                    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                        try {
+                             System.out.println(".--------CERRANDO EN NESTED");
+                             jarFile.close();
+                             System.out.println(".--------CERRADO EN NESTED FICHERO " + file.delete());
+                         } catch (IOException e) {
+                             e.printStackTrace();
+                         }
+                     }));
+
+                    //return ResourceLoaders.createJarResourceLoader(loaderName, jarFile, "/");
+                    return ResourceLoaders.createFileResourceLoader(loaderName, tmpDir);
                 } else {
+                    System.out.println("CASO 2:" + resourceRoot);
                     return ResourceLoaders.createFileResourceLoader(loaderName, resourceRoot.toFile());
                 }
             }
         } else if (urlString.startsWith("file:")) {
             if (loaderName.endsWith(".jar") || loaderName.endsWith(".war")) {
-                return ResourceLoaders.createJarResourceLoader(
-                        loaderName,
-                        new JarFile(new File(urlString.substring(5), loaderPath)));
+                System.out.println("CASO 3:" + urlString.substring(5));
+                final File file = new File(urlString.substring(5), loaderPath);
+                final JarFile jarFile = new JarFile(file);
+
+                File tmpDir = TempFileManager.INSTANCE.newTempDirectory("nextedjarloader", null);
+                explodeJar(jarFile, tmpDir.getAbsolutePath(), null);
+
+                jarFile.close();
+                file.delete();
+
+                Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                    try {
+                         System.out.println(".--------CERRANDO EN NESTED2");
+                         jarFile.close();
+                         System.out.println(".--------CERRADO EN NESTED2 FICHERO " + file.delete());
+                     } catch (IOException e) {
+                         e.printStackTrace();
+                     }
+                 }));
+                /*return ResourceLoaders.createJarResourceLoader(
+                        loaderName, jarFile, "/");*/
+                return ResourceLoaders.createFileResourceLoader(loaderName, tmpDir);
             }
+            System.out.println("CASO 4:" + urlString.substring(5));
             return ResourceLoaders.createFileResourceLoader(
                     loaderPath,
                     new File(urlString.substring(5))
             );
         } else {
+            System.out.println("CASO 5");
             return new AbstractResourceLoader() {
             };
         }
 
         throw new IllegalArgumentException("Illegal module loader base: " + base + " // " + loaderPath + " // " + loaderName);
+    }
+
+    private static void explodeJar(JarFile jarFile, String destdir, String rootDir) throws IOException {
+        Enumeration<java.util.jar.JarEntry> enu = jarFile.entries();
+        while (enu.hasMoreElements()) {
+            JarEntry je = enu.nextElement();
+
+            //System.out.println(je.getName());
+
+            File fl = new File(destdir, je.getName());
+            if (!fl.exists()) {
+                fl.getParentFile().mkdirs();
+                fl = new File(destdir, je.getName());
+            }
+            if (je.isDirectory()) {
+                continue;
+            }
+            InputStream is = null;
+            FileOutputStream fo = null;
+            try {
+                is = jarFile.getInputStream(je);
+                fo = new FileOutputStream(fl);
+                while (is.available() > 0) {
+                    fo.write(is.read());
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                if (fo != null) {
+                    fo.close();
+                }
+                if (is != null) {
+                    is.close();
+                }
+            }
+        }
     }
 
     private static Map<String, File> exploded = new HashMap<>();
