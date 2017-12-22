@@ -76,6 +76,7 @@ import org.wildfly.swarm.bootstrap.logging.BootstrapLogger;
 import org.wildfly.swarm.bootstrap.modules.BootModuleLoader;
 import org.wildfly.swarm.bootstrap.performance.Performance;
 import org.wildfly.swarm.bootstrap.util.BootstrapProperties;
+import org.wildfly.swarm.bootstrap.util.JarFileManager;
 import org.wildfly.swarm.cli.CommandLine;
 import org.wildfly.swarm.container.DeploymentException;
 import org.wildfly.swarm.container.config.ClassLoaderConfigLocator;
@@ -653,8 +654,8 @@ public class Swarm {
             Resource each = iter.next();
             if (each.getName().endsWith(".class")) {
                 if (!each.getName().equals("module-info.class")) {
-                    try {
-                        indexer.index(each.openStream());
+                    try (InputStream is = each.openStream()) {
+                        indexer.index(is);
                     } catch (IOException e) {
                         // ignore
                     }
