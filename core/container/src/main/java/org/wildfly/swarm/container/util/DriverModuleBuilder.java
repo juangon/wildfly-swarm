@@ -28,9 +28,11 @@ import org.jboss.modules.DependencySpec;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleSpec;
+import org.jboss.modules.ResourceLoader;
 import org.jboss.modules.ResourceLoaderSpec;
 import org.jboss.modules.ResourceLoaders;
 import org.wildfly.swarm.bootstrap.modules.DynamicModuleFinder;
+import org.wildfly.swarm.bootstrap.util.ResourceLoaderManager;
 
 /**
  * DriverModuleBuilder for applications that bring their own drivers.
@@ -78,15 +80,22 @@ public abstract class DriverModuleBuilder {
 
                 for (File eachJar : optionalJars) {
 
-                    try {
-                        JarFile jar = new JarFile(eachJar);
-                        builder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(
-                                ResourceLoaders.createIterableJarResourceLoader(jar.getName(), jar)
-                        ));
-                    } catch (IOException e) {
-                        Messages.MESSAGES.errorLoadingAutodetectedDriver(this.name, e);
+                    ResourceLoader resourceLoader = ResourceLoaderManager.INSTANCE.addResourceLoader(eachJar.toPath(),
+                            () -> {
+                                try {
+                                    JarFile jar = new JarFile(eachJar);
+                                    return ResourceLoaders.createIterableJarResourceLoader(jar.getName(), jar);
+                                } catch (IOException e) {
+                                    Messages.MESSAGES.errorLoadingAutodetectedDriver(this.name, e);
+                                    return null;
+                                }
+                            });
+
+                    if (resourceLoader == null) {
                         return null;
                     }
+
+                    builder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(resourceLoader));
                 }
 
                 for (String eachModuleIdentifier : driverModuleDependencies) {

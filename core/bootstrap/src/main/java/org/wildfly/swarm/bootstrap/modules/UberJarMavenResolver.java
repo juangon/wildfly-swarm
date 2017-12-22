@@ -15,24 +15,41 @@
  */
 package org.wildfly.swarm.bootstrap.modules;
 
+import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
+
+import java.io.Closeable;
 import java.io.File;
+//import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.FileSystems;
+//import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
+import java.nio.file.WatchEvent.Kind;
+//import java.util.concurrent.ExecutorService;
+//import java.util.concurrent.Executors;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.jboss.modules.maven.ArtifactCoordinates;
+
 import org.jboss.modules.maven.MavenResolver;
-import org.wildfly.swarm.bootstrap.util.TempFileManager;
+//import org.wildfly.swarm.bootstrap.util.TempFileManager;
 
 /**
  * @author Bob McWhirter
  */
-public class UberJarMavenResolver implements MavenResolver {
+public class UberJarMavenResolver implements MavenResolver, Closeable {
 
     private static final String HYPHEN = "-";
 
@@ -40,10 +57,88 @@ public class UberJarMavenResolver implements MavenResolver {
 
     private Map<ArtifactCoordinates, File> resolutionCache = new ConcurrentHashMap<>();
 
+    //private static ExecutorService monitorService;
+
+    private static WatchService watcher;
+
     public static File copyTempJar(String artifactId, InputStream in, String packaging) throws IOException {
-        File tmp = TempFileManager.INSTANCE.newTempFile(artifactId, DOT + packaging);
-        Files.copy(in, tmp.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        return tmp;
+       //File tmp = TempFileManager.INSTANCE.newTempFile(artifactId, DOT + packaging);
+       File tmp = Files.createTempFile(artifactId, DOT + packaging).toFile();
+       /*byte[] buffer = new byte[in.available()];
+       in.read(buffer);
+
+       OutputStream outStream = new FileOutputStream(tmp);
+       outStream.write(buffer);
+       outStream.close();*/
+       Files.copy(in, tmp.toPath(), StandardCopyOption.REPLACE_EXISTING);
+       in.close();
+
+       /*if (tmp.getName().contains("asm")) {
+           RandomAccessFile rf = new RandomAccessFile(tmp, "rw");
+           FileChannel fileChannel = rf.getChannel();
+
+           try {
+               FileLock lock = fileChannel.lock();
+               lock.acquiredBy().toString();
+           } catch (Exception e) {
+               e.printStackTrace();
+           }
+
+//           monitorService = Executors.newSingleThreadExecutor();
+//           monitorService.submit(() -> {
+//               File uuidFile = tmp;
+//                   try {
+//                       File watchedDir = uuidFile.getParentFile();
+//                       register(watchedDir);
+//                       processEvents(watchedDir, uuidFile.toPath());
+//                   } catch (Exception e) {
+//                       e.printStackTrace();
+//                   }
+//
+//                   return null;
+//               }
+//           );
+       }*/
+       System.out.println("Copying " + tmp.toString());
+       return tmp;
+    }
+
+    private static void register(File directory) throws IOException {
+        watcher = FileSystems.getDefault().newWatchService();
+        directory.toPath().register(watcher, ENTRY_DELETE);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void processEvents(File watchedDir, Path file) {
+        for (;;) {
+
+            WatchKey key;
+            try {
+                key = watcher.take();
+            } catch (InterruptedException x) {
+                return;
+            }
+
+            for (WatchEvent<?> event: key.pollEvents()) {
+                Kind<?> kind = event.kind();
+
+                WatchEvent<Path> ev = (WatchEvent<Path>)event;
+                Path name = ev.context();
+                Path child = watchedDir.toPath().resolve(name);
+
+                if (child.equals(file)) {
+                    System.out.println("---FILE:" + file + " event:" + kind);
+                    if (kind == ENTRY_DELETE) {
+                        return;
+                    }
+                }
+            }
+
+            boolean valid = key.reset();
+            if (!valid) {
+               break;
+            }
+        }
     }
 
     @Override
@@ -71,6 +166,18 @@ public class UberJarMavenResolver implements MavenResolver {
         return resolved;
     }
 
+    @Override
+    public void close() throws IOException {
+        resolutionCache.forEach((a, f) -> {
+                System.out.println(" Deleting jar " + f.getName());
+                try {
+                    Files.delete(f.toPath());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+        });
+    }
+
     static String relativeArtifactPath(char separator, String groupId, String artifactId, String version) {
         StringBuilder builder = new StringBuilder(groupId.replace('.', separator));
         builder.append(separator).append(artifactId).append(separator);
@@ -87,4 +194,5 @@ public class UberJarMavenResolver implements MavenResolver {
     }
 
     private static final Pattern snapshotPattern = Pattern.compile("-\\d{8}\\.\\d{6}-\\d+$");
+
 }

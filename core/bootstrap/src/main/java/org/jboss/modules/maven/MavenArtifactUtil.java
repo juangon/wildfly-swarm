@@ -40,6 +40,7 @@ import org.jboss.modules.Module;
 import org.jboss.modules.ResourceLoader;
 import org.jboss.modules.ResourceLoaders;
 import org.wildfly.swarm.bootstrap.logging.BootstrapLogger;
+import org.wildfly.swarm.bootstrap.util.ResourceLoaderManager;
 import org.xml.sax.InputSource;
 
 /**
@@ -267,6 +268,17 @@ public final class MavenArtifactUtil {
         if (fp == null) return null;
         JarFile jarFile = new JarFile(fp, true);
         return ResourceLoaders.createJarResourceLoader(name, jarFile);
+        /*ResourceLoader resourceLoader = ResourceLoaderManager.INSTANCE.addResourceLoader(fp.toPath(),
+                () -> {
+                    try {
+                        JarFile jarFile = new JarFile(fp, true);
+                        System.out.println("---MAVENARTIFACTUTIL JAR " + jarFile.getName());
+                        return ResourceLoaders.createJarResourceLoader(name, jarFile);
+                    } catch (IOException e) {
+                        return null;
+                    }
+                });
+         return resourceLoader;*/
     }
 
     static <T> T doIo(PrivilegedExceptionAction<T> action) throws IOException {

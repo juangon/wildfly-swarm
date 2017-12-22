@@ -80,12 +80,10 @@ public class ClasspathModuleFinder implements ModuleFinder {
                     LOG.trace("base of " + identifier + ": " + base);
                 }
 
-                InputStream in = url.openStream();
-
                 Path explodedJar = NestedJarResourceLoader.explodedJar(base);
 
                 ModuleSpec moduleSpec = null;
-                try {
+                try (InputStream in = url.openStream()) {
                     moduleSpec = ModuleXmlParser.parseModuleXml(
                             (rootPath, loaderPath, loaderName) -> NestedJarResourceLoader.loaderFor(base, rootPath, loaderPath, loaderName),
                             MavenResolvers.get(),
@@ -97,13 +95,8 @@ public class ClasspathModuleFinder implements ModuleFinder {
 
                 } catch (IOException e) {
                     throw new ModuleLoadException(e);
-                } finally {
-                    try {
-                        in.close();
-                    } catch (IOException e) {
-                        throw new ModuleLoadException(e);
-                    }
                 }
+
                 if (LOG.isTraceEnabled()) {
                     LOG.trace("Loaded ModuleSpec: " + moduleSpec.getName());
                 }

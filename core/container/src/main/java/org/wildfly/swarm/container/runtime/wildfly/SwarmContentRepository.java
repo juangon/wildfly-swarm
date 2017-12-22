@@ -95,10 +95,10 @@ public class SwarmContentRepository implements ContentRepository, Service<Conten
             MessageDigest messageDigest = MessageDigest.getInstance("SHA-1");
             byte[] sha1Bytes;
             Path tmp = File.createTempFile("content", ".tmp").toPath();
-            try (OutputStream fos = Files.newOutputStream(tmp)) {
+            try (OutputStream fos = Files.newOutputStream(tmp); BufferedInputStream bis = new BufferedInputStream(stream)) {
                 messageDigest.reset();
                 DigestOutputStream dos = new DigestOutputStream(fos, messageDigest);
-                BufferedInputStream bis = new BufferedInputStream(stream);
+
                 byte[] bytes = new byte[8192];
                 int read;
                 while ((read = bis.read(bytes)) > -1) {
@@ -107,6 +107,7 @@ public class SwarmContentRepository implements ContentRepository, Service<Conten
                 fos.flush();
                 sha1Bytes = messageDigest.digest();
             }
+
             String key = toKey(sha1Bytes);
             this.index.put(key, tmp.toUri());
             return sha1Bytes;

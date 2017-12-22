@@ -309,6 +309,7 @@ public class RuntimeDeployer implements Deployer {
 
     public void removeAllContent() throws IOException {
         this.contentRepository.removeAllContent();
+        //MavenResolvers.close();
     }
 
     @Inject

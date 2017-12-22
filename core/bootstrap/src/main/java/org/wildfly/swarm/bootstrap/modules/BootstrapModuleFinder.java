@@ -35,6 +35,7 @@ import org.jboss.modules.filter.PathFilters;
 import org.wildfly.swarm.bootstrap.env.ApplicationEnvironment;
 import org.wildfly.swarm.bootstrap.logging.BootstrapLogger;
 import org.wildfly.swarm.bootstrap.performance.Performance;
+import org.wildfly.swarm.bootstrap.util.ResourceLoaderManager;
 
 /**
  * Module-finder used only for loading the first set of jars when run in an fat-jar scenario.
@@ -66,15 +67,30 @@ public class BootstrapModuleFinder extends AbstractSingleModuleFinder {
                             if (artifact == null) {
                                 throw new RuntimeException("Unable to resolve artifact from coordinates: " + coords);
                             }
-                            JarFile jar = new JarFile(artifact);
-                            ResourceLoader originaloader = ResourceLoaders.createJarResourceLoader(artifact.getName(), jar);
 
-                            PathFilter filter = getModuleFilter(jar);
+                            ResourceLoader originalLoader = ResourceLoaderManager.INSTANCE.addResourceLoader(artifact.toPath(),
+                                   () -> {
+                                        try {
+                                            JarFile jar = new JarFile(artifact);
+                                            System.out.println("BOOTSTRAPMODULE loader " + jar.getName());
+                                            return ResourceLoaders.createJarResourceLoader(artifact.getName(), jar);
+                                        } catch (IOException e) {
+                                           return null;
+                                        }
+                                    });
+
+                                if (originalLoader == null) {
+                                  throw new IOException();
+                                }
+
+                            PathFilter filter = getModuleFilter(artifact);
+
                             builder.addResourceRoot(
                                     ResourceLoaderSpec.createResourceLoaderSpec(
-                                            ResourceLoaders.createFilteredResourceLoader(filter, originaloader)
+                                            ResourceLoaders.createFilteredResourceLoader(filter, originalLoader)
                                     )
                             );
+
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
@@ -98,18 +114,20 @@ public class BootstrapModuleFinder extends AbstractSingleModuleFinder {
 
     }
 
-    private PathFilter getModuleFilter(JarFile jar) {
+    private PathFilter getModuleFilter(File file) throws IOException {
         Set<String> paths = new HashSet<>();
 
-        Enumeration<JarEntry> jarEntries = jar.entries();
+        try (JarFile jar = new JarFile(file)) {
+            Enumeration<JarEntry> jarEntries = jar.entries();
 
-        while (jarEntries.hasMoreElements()) {
-            JarEntry jarEntry = jarEntries.nextElement();
-            if (!jarEntry.isDirectory()) {
-                String name = jarEntry.getName();
-                if (name.endsWith("/module.xml")) {
-                    paths.add(name);
-                }
+             while (jarEntries.hasMoreElements()) {
+                  JarEntry jarEntry = jarEntries.nextElement();
+                 if (!jarEntry.isDirectory()) {
+                        String name = jarEntry.getName();
+                     if (name.endsWith("/module.xml")) {
+                         paths.add(name);
+                      }
+                 }
             }
         }
         return PathFilters.in(paths);
