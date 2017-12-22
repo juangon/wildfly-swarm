@@ -61,7 +61,6 @@ public class StopMojo extends AbstractSwarmMojo {
         }
     }
 
-
     protected void stop(SwarmProcess process) throws MojoFailureException {
         if (process != null) {
             try {
