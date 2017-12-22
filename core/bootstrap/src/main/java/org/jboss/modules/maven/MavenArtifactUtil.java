@@ -30,6 +30,8 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.List;
 import java.util.jar.JarFile;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpression;
@@ -40,6 +42,8 @@ import org.jboss.modules.Module;
 import org.jboss.modules.ResourceLoader;
 import org.jboss.modules.ResourceLoaders;
 import org.wildfly.swarm.bootstrap.logging.BootstrapLogger;
+import org.wildfly.swarm.bootstrap.util.JarFileManager;
+import org.wildfly.swarm.bootstrap.util.ResourceLoaderManager;
 import org.xml.sax.InputSource;
 
 /**
@@ -265,8 +269,28 @@ public final class MavenArtifactUtil {
     public static ResourceLoader createMavenArtifactLoader(final MavenResolver mavenResolver, final String name) throws IOException {
         File fp = mavenResolver.resolveJarArtifact(ArtifactCoordinates.fromString(name));
         if (fp == null) return null;
-        JarFile jarFile = new JarFile(fp, true);
-        return ResourceLoaders.createJarResourceLoader(name, jarFile);
+        final Pattern pattern = Pattern.compile("\\S+[0-9]{5,}.\\S{5,}");
+        Matcher matcher = pattern.matcher(fp.getName());
+        if (matcher.matches()) {
+            ResourceLoader resourceLoader = ResourceLoaderManager.INSTANCE.addResourceLoader(fp,
+                    () -> {
+                        try {
+                            JarFile jarFile = JarFileManager.INSTANCE.addJarFile(fp);
+                            return ResourceLoaders.createJarResourceLoader(name, jarFile);
+                        } catch (IOException e) {
+                            return null;
+                        }
+                    }
+            );
+
+            if (resourceLoader == null) {
+                throw new IOException();
+            }
+            return resourceLoader;
+        } else {
+            JarFile jarFile = new JarFile(fp, true);
+            return ResourceLoaders.createJarResourceLoader(name, jarFile);
+        }
     }
 
     static <T> T doIo(PrivilegedExceptionAction<T> action) throws IOException {

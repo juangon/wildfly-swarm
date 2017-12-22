@@ -29,9 +29,12 @@ import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleSpec;
+import org.jboss.modules.ResourceLoader;
 import org.jboss.modules.ResourceLoaderSpec;
 import org.jboss.modules.ResourceLoaders;
 import org.wildfly.swarm.bootstrap.modules.DynamicModuleFinder;
+import org.wildfly.swarm.bootstrap.util.JarFileManager;
+import org.wildfly.swarm.bootstrap.util.ResourceLoaderManager;
 import org.wildfly.swarm.config.datasources.DataSource;
 import org.wildfly.swarm.config.datasources.DataSourceConsumer;
 import org.wildfly.swarm.config.datasources.JDBCDriver;
@@ -116,15 +119,26 @@ public abstract class DriverInfo {
 
                 for (File eachJar : optionalJars) {
 
-                    try {
-                        JarFile jar = new JarFile(eachJar);
-                        builder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(
-                                ResourceLoaders.createIterableJarResourceLoader(jar.getName(), jar)
-                        ));
-                    } catch (IOException e) {
-                        DatasourcesMessages.MESSAGES.errorLoadingAutodetectedJdbcDriver(this.name, e);
+                    ResourceLoader resourceLoader = ResourceLoaderManager.INSTANCE.addResourceLoader(eachJar,
+                            () -> {
+                                try {
+                                    //JarFile jar = new JarFile(eachJar);
+                                    JarFile jar = JarFileManager.INSTANCE.addJarFile(eachJar);
+                                    return ResourceLoaders.createIterableJarResourceLoader(jar.getName(), jar);
+                                } catch (IOException e) {
+                                    DatasourcesMessages.MESSAGES.errorLoadingAutodetectedJdbcDriver(this.name, e);
+                                    return null;
+                                }
+                            });
+
+                    if (resourceLoader == null) {
                         return null;
                     }
+
+                    builder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(
+                            resourceLoader
+                    ));
+
                 }
 
                 builder.addDependency(DependencySpec.createModuleDependencySpec("javax.api"));
