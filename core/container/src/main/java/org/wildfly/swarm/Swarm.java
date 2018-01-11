@@ -74,7 +74,6 @@ import org.wildfly.swarm.bootstrap.env.ApplicationEnvironment;
 import org.wildfly.swarm.bootstrap.logging.BackingLoggerManager;
 import org.wildfly.swarm.bootstrap.logging.BootstrapLogger;
 import org.wildfly.swarm.bootstrap.modules.BootModuleLoader;
-//import org.wildfly.swarm.bootstrap.modules.MavenResolvers;
 import org.wildfly.swarm.bootstrap.performance.Performance;
 import org.wildfly.swarm.bootstrap.util.BootstrapProperties;
 import org.wildfly.swarm.cli.CommandLine;
@@ -438,7 +437,6 @@ public class Swarm {
         WeldShutdown shutdown = (WeldShutdown) shutdownClass.newInstance();
         shutdown.shutdown();
 
-        //MavenResolvers.close();
         return this;
     }
 
