@@ -35,7 +35,9 @@ import org.jboss.modules.maven.ArtifactCoordinates;
 import org.wildfly.swarm.bootstrap.env.ApplicationEnvironment;
 import org.wildfly.swarm.bootstrap.logging.BootstrapLogger;
 import org.wildfly.swarm.bootstrap.util.BootstrapUtil;
+import org.wildfly.swarm.bootstrap.util.JarFileManager;
 import org.wildfly.swarm.bootstrap.util.ResourceLoaderManager;
+//import org.wildfly.swarm.bootstrap.util.ResourceLoaderManager;
 import org.wildfly.swarm.bootstrap.util.TempFileManager;
 
 /**
@@ -173,10 +175,11 @@ public class ApplicationModuleFinder extends AbstractSingleModuleFinder {
                             return;
                         }
 
-                        ResourceLoader loader = ResourceLoaderManager.INSTANCE.addResourceLoader(artifact.toPath(),
+                        ResourceLoader loader = ResourceLoaderManager.INSTANCE.addResourceLoader(artifact,
                                 () -> {
                                     try {
-                                        JarFile jar = new JarFile(artifact);
+                                        //JarFile jar = new JarFile(artifact);
+                                        JarFile jar = JarFileManager.INSTANCE.addJarFile(artifact);
                                         System.out.println("---APPLICATIONMODULEFINDER JAR " + jar.getName());
                                         return ResourceLoaders.createJarResourceLoader(artifact.getName(), jar);
                                     } catch (IOException e) {
@@ -187,6 +190,10 @@ public class ApplicationModuleFinder extends AbstractSingleModuleFinder {
                         if (loader == null) {
                            throw new IOException();
                         }
+
+                        //JarFile jar = JarFileManager.INSTANCE.addJarFile(artifact);
+                        //System.out.println("---APPLICATIONMODULEFINDER JAR " + jar.getName());
+                        //ResourceLoader loader = ResourceLoaders.createJarResourceLoader(artifact.getName(), jar);
 
                         builder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(loader));
                     } catch (IOException e) {

@@ -168,14 +168,22 @@ public class UberJarMavenResolver implements MavenResolver, Closeable {
 
     @Override
     public void close() throws IOException {
-        resolutionCache.forEach((a, f) -> {
+        /*resolutionCache.forEach((a, f) -> {
                 System.out.println(" Deleting jar " + f.getName());
                 try {
                     Files.delete(f.toPath());
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-        });
+        });*/
+        for (File file : resolutionCache.values()) {
+            System.out.println(" Deleting jar " + file.getName());
+            try {
+                Files.delete(file.toPath());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     static String relativeArtifactPath(char separator, String groupId, String artifactId, String version) {

@@ -35,7 +35,9 @@ import org.jboss.modules.filter.PathFilters;
 import org.wildfly.swarm.bootstrap.env.ApplicationEnvironment;
 import org.wildfly.swarm.bootstrap.logging.BootstrapLogger;
 import org.wildfly.swarm.bootstrap.performance.Performance;
+import org.wildfly.swarm.bootstrap.util.JarFileManager;
 import org.wildfly.swarm.bootstrap.util.ResourceLoaderManager;
+//import org.wildfly.swarm.bootstrap.util.ResourceLoaderManager;
 
 /**
  * Module-finder used only for loading the first set of jars when run in an fat-jar scenario.
@@ -68,26 +70,59 @@ public class BootstrapModuleFinder extends AbstractSingleModuleFinder {
                                 throw new RuntimeException("Unable to resolve artifact from coordinates: " + coords);
                             }
 
-                            ResourceLoader originalLoader = ResourceLoaderManager.INSTANCE.addResourceLoader(artifact.toPath(),
+                            //PathFilter filter = getModuleFilter(artifact);
+
+                            PathFilter filter = new PathFilter() {
+                                @Override
+                               public boolean accept(String path) {
+                                    return path.endsWith("module.xml");
+                                }
+                            };
+
+                            ResourceLoader originalLoader = ResourceLoaderManager.INSTANCE.addResourceLoader(artifact,
                                    () -> {
                                         try {
-                                            JarFile jar = new JarFile(artifact);
-                                            System.out.println("BOOTSTRAPMODULE loader " + jar.getName());
+                                            //JarFile jar = new JarFile(artifact);
+                                            JarFile jar = JarFileManager.INSTANCE.addJarFile(artifact);
+                                            System.out.println("BOOTSTRAPMODULE original loader " + jar.getName());
                                             return ResourceLoaders.createJarResourceLoader(artifact.getName(), jar);
                                         } catch (IOException e) {
                                            return null;
                                         }
                                     });
 
-                                if (originalLoader == null) {
-                                  throw new IOException();
-                                }
+                            if (originalLoader == null) {
+                              throw new IOException();
+                            }
+                            /*JarFile jar = JarFileManager.INSTANCE.addJarFile(artifact);
+                            System.out.println("BOOTSTRAPMODULE original loader " + jar.getName());
+                            ResourceLoader originalLoader = ResourceLoaders.createJarResourceLoader(artifact.getName(), jar);*/
 
-                            PathFilter filter = getModuleFilter(artifact);
+                            //ResourceLoader loader = originalLoader;
+                            //ResourceLoader loader = ResourceLoaders.createFilteredResourceLoader(filter, originalLoader);
+                            ResourceLoader loader = ResourceLoaderManager.INSTANCE.addResourceLoader("filtered" + artifact.getAbsolutePath(),
+                                    () -> {
+                                        //try {
+                                           //JarFile jar = new JarFile(artifact);
+                                           /*JarFile jar = JarFileManager.INSTANCE.addJarFile(artifact);
+                                           System.out.println("BOOTSTRAPMODULE original loader " + jar.getName());
+                                           ResourceLoader originalLoader = ResourceLoaders.createJarResourceLoader(artifact.getName(), jar);
+                                           if (originalLoader == null) {
+                                               throw new IOException();
+                                           }*/
+                                           System.out.println("BOOTSTRAPMODULE loader " + "filtered" + artifact.getAbsolutePath());
+                                           return ResourceLoaders.createFilteredResourceLoader(filter, originalLoader);
+                                        /*} catch (IOException e) {
+                                            return null;
+                                        }*/
+                                     });
+
+                             if (loader == null) {
+                               throw new IOException();
+                             }
 
                             builder.addResourceRoot(
-                                    ResourceLoaderSpec.createResourceLoaderSpec(
-                                            ResourceLoaders.createFilteredResourceLoader(filter, originalLoader)
+                                    ResourceLoaderSpec.createResourceLoaderSpec(loader
                                     )
                             );
 

@@ -49,6 +49,7 @@ import org.jboss.msc.value.ImmediateValue;
 import org.jboss.shrinkwrap.api.Archive;
 import org.wildfly.swarm.bootstrap.modules.MavenResolvers;
 import org.wildfly.swarm.bootstrap.performance.Performance;
+import org.wildfly.swarm.bootstrap.util.JarFileManager;
 import org.wildfly.swarm.bootstrap.util.ResourceLoaderManager;
 //import org.wildfly.swarm.bootstrap.util.ResourceLoaderManager;
 import org.wildfly.swarm.bootstrap.util.TempFileManager;
@@ -288,6 +289,7 @@ public class RuntimeServer implements Server {
         this.deployer = null;
         //MavenArtifactUtil.closeJarFiles();
         ResourceLoaderManager.INSTANCE.close();
+        JarFileManager.INSTANCE.close();
         MavenResolvers.close();
     }
 

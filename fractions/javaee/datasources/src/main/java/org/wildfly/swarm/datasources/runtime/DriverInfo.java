@@ -33,6 +33,7 @@ import org.jboss.modules.ResourceLoader;
 import org.jboss.modules.ResourceLoaderSpec;
 import org.jboss.modules.ResourceLoaders;
 import org.wildfly.swarm.bootstrap.modules.DynamicModuleFinder;
+import org.wildfly.swarm.bootstrap.util.JarFileManager;
 import org.wildfly.swarm.bootstrap.util.ResourceLoaderManager;
 import org.wildfly.swarm.config.datasources.DataSource;
 import org.wildfly.swarm.config.datasources.DataSourceConsumer;
@@ -118,10 +119,11 @@ public abstract class DriverInfo {
 
                 for (File eachJar : optionalJars) {
 
-                    ResourceLoader resourceLoader = ResourceLoaderManager.INSTANCE.addResourceLoader(eachJar.toPath(),
+                    ResourceLoader resourceLoader = ResourceLoaderManager.INSTANCE.addResourceLoader(eachJar,
                             () -> {
                                 try {
-                                    JarFile jar = new JarFile(eachJar);
+                                    //JarFile jar = new JarFile(eachJar);
+                                    JarFile jar = JarFileManager.INSTANCE.addJarFile(eachJar);
                                     return ResourceLoaders.createIterableJarResourceLoader(jar.getName(), jar);
                                 } catch (IOException e) {
                                     DatasourcesMessages.MESSAGES.errorLoadingAutodetectedJdbcDriver(this.name, e);

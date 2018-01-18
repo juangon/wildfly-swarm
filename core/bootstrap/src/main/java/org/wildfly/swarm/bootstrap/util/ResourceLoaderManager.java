@@ -1,8 +1,9 @@
 package org.wildfly.swarm.bootstrap.util;
 
+import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.util.HashMap;
+//import java.nio.file.Path;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -15,8 +16,8 @@ public class ResourceLoaderManager {
     private ResourceLoaderManager() {
     }
 
-    public ResourceLoader addResourceLoader(Path path, Supplier<ResourceLoader> resourceLoaderSupplier) {
-        return addResourceLoader(path.toString(), resourceLoaderSupplier);
+    public ResourceLoader addResourceLoader(File file, Supplier<ResourceLoader> resourceLoaderSupplier) {
+        return addResourceLoader(file.getAbsolutePath(), resourceLoaderSupplier);
     }
 
     public ResourceLoader addResourceLoader(String name, Supplier<ResourceLoader> resourceLoaderSupplier) {
@@ -25,6 +26,15 @@ public class ResourceLoaderManager {
         if (resourceLoader == null) {
             resourceLoader = resourceLoaderSupplier.get();
             resourceLoaderToClose.put(name, resourceLoader);
+            System.out.println("---RESOURCE LOADER:" + resourceLoader.getLocation() + " added," + name);
+        } else {
+            System.out.println("---RESOURCE LOADER:" + resourceLoader.getLocation() + " not added," + name);
+        }
+
+        if (name.contains("io-2018")) {
+              for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
+                  System.out.println(ste);
+              }
         }
         return resourceLoader;
     }
@@ -37,5 +47,5 @@ public class ResourceLoaderManager {
                     });
     }
 
-    private Map<String, ResourceLoader> resourceLoaderToClose = new HashMap<>();
+    private Map<String, ResourceLoader> resourceLoaderToClose = new LinkedHashMap<>();
 }
