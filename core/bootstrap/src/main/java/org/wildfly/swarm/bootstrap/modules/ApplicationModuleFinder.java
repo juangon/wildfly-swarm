@@ -123,7 +123,7 @@ public class ApplicationModuleFinder extends AbstractSingleModuleFinder {
             name = name.substring(0, dotLoc);
         }
 
-        File tmp = File.createTempFile(name, ext);
+        File tmp = File.createTempFile(TempFileManager.WFSWARM_TMP_PREFIX + name, ext);
 
         try (InputStream artifactIn = getClass().getClassLoader().getResourceAsStream(path)) {
             Files.copy(artifactIn, tmp.toPath(), StandardCopyOption.REPLACE_EXISTING);

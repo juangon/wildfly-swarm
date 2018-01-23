@@ -29,6 +29,8 @@ public class TempFileManager {
 
     public static final String TMPDIR_PROPERTY = "swarm.io.tmpdir";
 
+    public static final String WFSWARM_TMP_PREFIX = "wfswarm";
+
     public static final TempFileManager INSTANCE = new TempFileManager();
 
     private TempFileManager() {
@@ -49,7 +51,7 @@ public class TempFileManager {
     }
 
     public File newTempDirectory(String base, String ext) throws IOException {
-        File tmp = File.createTempFile(base, ext, this.tmpDir);
+        File tmp = File.createTempFile(WFSWARM_TMP_PREFIX + base, ext, this.tmpDir);
         tmp.delete();
         tmp.mkdirs();
         tmp.deleteOnExit();
@@ -58,7 +60,7 @@ public class TempFileManager {
     }
 
     public File newTempFile(String base, String ext) throws IOException {
-        File tmp = File.createTempFile(base, ext, this.tmpDir);
+        File tmp = File.createTempFile(WFSWARM_TMP_PREFIX + base, ext, this.tmpDir);
         tmp.delete();
         tmp.deleteOnExit();
         register(tmp);

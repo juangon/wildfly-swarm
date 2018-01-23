@@ -37,6 +37,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.wildfly.swarm.bootstrap.util.BootstrapProperties;
+import org.wildfly.swarm.bootstrap.util.TempFileManager;
 import org.wildfly.swarm.fractions.FractionDescriptor;
 import org.wildfly.swarm.fractions.FractionList;
 import org.wildfly.swarm.fractions.FractionUsageAnalyzer;
@@ -327,8 +328,8 @@ public class StartMojo extends AbstractSwarmMojo {
                 // multi-start doesn't have a projectBuildDir
 
                 File tmp = this.projectBuildDir != null ?
-                        Files.createTempFile(Paths.get(this.projectBuildDir), "swarm-", "-cp.txt").toFile() :
-                        Files.createTempFile("swarm-", "-cp.txt").toFile();
+                        Files.createTempFile(Paths.get(this.projectBuildDir), TempFileManager.WFSWARM_TMP_PREFIX + "swarm-", "-cp.txt").toFile() :
+                        Files.createTempFile(TempFileManager.WFSWARM_TMP_PREFIX + "swarm-", "-cp.txt").toFile();
 
                 tmp.deleteOnExit();
                 getPluginContext().put("swarm-cp-file", tmp);

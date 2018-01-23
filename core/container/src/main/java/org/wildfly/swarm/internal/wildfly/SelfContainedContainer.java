@@ -51,6 +51,7 @@ import org.jboss.stdio.NullInputStream;
 import org.jboss.stdio.SimpleStdioContextSelector;
 import org.jboss.stdio.StdioContext;
 import org.wildfly.security.manager.WildFlySecurityManager;
+import org.wildfly.swarm.bootstrap.util.TempFileManager;
 
 //import org.jboss.as.selfcontained.ContentProvider;
 //import org.jboss.as.selfcontained.ContentProviderServiceActivator;
@@ -178,7 +179,7 @@ public final class SelfContainedContainer {
 
     private File createTmpDir() {
         try {
-            File tmpDir = File.createTempFile("wildfly-self-contained", ".d");
+            File tmpDir = File.createTempFile(TempFileManager.WFSWARM_TMP_PREFIX + "wildfly-self-contained", ".d");
             if (tmpDir.exists()) {
                 for (int i = 0; i < 10; ++i) {
                     if (tmpDir.exists()) {

@@ -70,6 +70,7 @@ import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.vfs.VFS;
 import org.jboss.vfs.VirtualFile;
+import org.wildfly.swarm.bootstrap.util.TempFileManager;
 
 /**
  * A content-repository capable of providing a static bit of content.
@@ -94,7 +95,7 @@ public class SwarmContentRepository implements ContentRepository, Service<Conten
         try {
             MessageDigest messageDigest = MessageDigest.getInstance("SHA-1");
             byte[] sha1Bytes;
-            Path tmp = File.createTempFile("content", ".tmp").toPath();
+            Path tmp = File.createTempFile(TempFileManager.WFSWARM_TMP_PREFIX + "content", ".tmp").toPath();
             try (OutputStream fos = Files.newOutputStream(tmp); BufferedInputStream bis = new BufferedInputStream(stream)) {
                 messageDigest.reset();
                 DigestOutputStream dos = new DigestOutputStream(fos, messageDigest);

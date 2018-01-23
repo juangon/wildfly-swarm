@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 import org.jboss.modules.maven.ArtifactCoordinates;
 
 import org.jboss.modules.maven.MavenResolver;
+import org.wildfly.swarm.bootstrap.util.TempFileManager;
 
 /**
  * @author Bob McWhirter
@@ -44,7 +45,7 @@ public class UberJarMavenResolver implements MavenResolver, Closeable {
     private Map<ArtifactCoordinates, File> resolutionCache = new ConcurrentHashMap<>();
 
     public static File copyTempJar(String artifactId, InputStream in, String packaging) throws IOException {
-        File tmp = Files.createTempFile(artifactId, DOT + packaging).toFile();
+        File tmp = Files.createTempFile(TempFileManager.WFSWARM_TMP_PREFIX + artifactId, DOT + packaging).toFile();
         Files.copy(in, tmp.toPath(), StandardCopyOption.REPLACE_EXISTING);
         in.close();
         return tmp;

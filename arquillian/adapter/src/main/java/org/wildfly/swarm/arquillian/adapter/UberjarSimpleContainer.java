@@ -274,7 +274,7 @@ public class UberjarSimpleContainer implements SimpleContainer {
                 System.err.println("-> " + each.getKey());
             }*/
 
-        File executable = File.createTempFile("arquillian", "-swarm.jar");
+        File executable = File.createTempFile(TempFileManager.WFSWARM_TMP_PREFIX + "arquillian", "-swarm.jar");
         wrapped.as(ZipExporter.class).exportTo(executable, true);
         executable.deleteOnExit();
 
@@ -286,7 +286,7 @@ public class UberjarSimpleContainer implements SimpleContainer {
 
         executor.withProperty("java.net.preferIPv4Stack", "true");
 
-        File processFile = File.createTempFile("mainprocessfile", null);
+        File processFile = File.createTempFile(TempFileManager.WFSWARM_TMP_PREFIX + "mainprocessfile", null);
         processFile.deleteOnExit();
 
         executor.withProcessFile(processFile);
