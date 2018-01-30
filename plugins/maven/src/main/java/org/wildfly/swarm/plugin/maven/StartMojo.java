@@ -188,8 +188,16 @@ public class StartMojo extends AbstractSwarmMojo {
             finalName = finalName.substring(0, finalName.length() - 4);
         }
 
+        File tmp;
+        try {
+            tmp = Files.createTempFile("swarm-process-file", null).toFile();
+        } catch (IOException e) {
+            throw new MojoFailureException("Error while creating process file");
+        }
+
         return new SwarmExecutor()
-                .withExecutableJar(Paths.get(this.projectBuildDir, finalName + "-swarm.jar"));
+                .withExecutableJar(Paths.get(this.projectBuildDir, finalName + "-swarm.jar"))
+                .withProcessFile(tmp);
     }
 
     protected SwarmExecutor warExecutor() throws MojoFailureException {

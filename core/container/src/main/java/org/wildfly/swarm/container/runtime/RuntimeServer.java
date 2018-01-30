@@ -18,6 +18,7 @@ package org.wildfly.swarm.container.runtime;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+//import org.wildfly.swarm.bootstrap.util.TempFileManager;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -50,7 +51,6 @@ import org.jboss.shrinkwrap.api.Archive;
 import org.wildfly.swarm.bootstrap.modules.MavenResolvers;
 import org.wildfly.swarm.bootstrap.performance.Performance;
 import org.wildfly.swarm.bootstrap.util.JarFileManager;
-import org.wildfly.swarm.bootstrap.util.TempFileManager;
 import org.wildfly.swarm.container.internal.Deployer;
 import org.wildfly.swarm.container.internal.Server;
 import org.wildfly.swarm.container.runtime.deployments.DefaultDeploymentCreator;
@@ -137,9 +137,11 @@ public class RuntimeServer implements Server {
         UUID uuid = UUIDFactory.getUUID();
         System.setProperty("jboss.server.management.uuid", uuid.toString());
 
-        File configurationFile;
+        //File configurationFile;
         try {
-            configurationFile = TempFileManager.INSTANCE.newTempFile("swarm-config-", ".xml");
+            configurationFile = File.createTempFile("swarm-config-", ".xml");
+            configurationFile.delete();
+            //configurationFile = TempFileManager.INSTANCE.newTempFile("swarm-config-", ".xml");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -287,6 +289,8 @@ public class RuntimeServer implements Server {
         this.deployer = null;
         JarFileManager.INSTANCE.close();
         MavenResolvers.close();
+        System.out.println("----DELETING CONFIG FILE");
+        configurationFile.delete();
     }
 
     private void awaitContainerTermination() {
@@ -327,4 +331,6 @@ public class RuntimeServer implements Server {
     private NetworkConfigurer networkConfigurer;
 
     private ModelControllerClient client;
+
+    private File configurationFile;
 }
