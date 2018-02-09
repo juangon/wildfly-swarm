@@ -45,8 +45,10 @@ public class UberJarMavenResolver implements MavenResolver, Closeable {
     private Map<ArtifactCoordinates, File> resolutionCache = new ConcurrentHashMap<>();
 
     public static File copyTempJar(String artifactId, InputStream in, String packaging) throws IOException {
-        File tmp = Files.createTempFile(TempFileManager.WFSWARM_TMP_PREFIX + artifactId, DOT + packaging).toFile();
+        //File tmp = Files.createTempFile(TempFileManager.WFSWARM_TMP_PREFIX + artifactId, DOT + packaging).toFile();
+        File tmp = TempFileManager.INSTANCE.newTempFile(artifactId, DOT + packaging);
         Files.copy(in, tmp.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        System.out.println("Copied file " + tmp.getName());
         in.close();
         return tmp;
     }

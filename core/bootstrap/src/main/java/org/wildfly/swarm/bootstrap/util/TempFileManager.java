@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -34,6 +35,9 @@ public class TempFileManager {
     public static final TempFileManager INSTANCE = new TempFileManager();
 
     private TempFileManager() {
+        registered.put(true, Collections.newSetFromMap(new ConcurrentHashMap<>()));
+        registered.put(false, Collections.newSetFromMap(new ConcurrentHashMap<>()));
+
         String tmpDir = System.getProperty(TMPDIR_PROPERTY);
         if (tmpDir != null) {
             this.tmpDir = new File(tmpDir);
@@ -46,38 +50,51 @@ public class TempFileManager {
             }
         }
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            INSTANCE.close();
+            INSTANCE.close(true);
         }));
     }
 
     public File newTempDirectory(String base, String ext) throws IOException {
+        return newTempDirectory(false, base, ext);
+    }
+
+    public File newTempDirectory(boolean shutdownHook, String base, String ext) throws IOException {
         File tmp = File.createTempFile(WFSWARM_TMP_PREFIX + base, ext, this.tmpDir);
         tmp.delete();
         tmp.mkdirs();
         tmp.deleteOnExit();
-        register(tmp);
+        register(shutdownHook, tmp);
         return tmp;
     }
 
     public File newTempFile(String base, String ext) throws IOException {
+        return newTempFile(false, base, ext);
+    }
+
+    public File newTempFile(boolean shutdownHook, String base, String ext) throws IOException {
         File tmp = File.createTempFile(WFSWARM_TMP_PREFIX + base, ext, this.tmpDir);
         tmp.delete();
         tmp.deleteOnExit();
-        register(tmp);
+        register(shutdownHook, tmp);
         return tmp;
     }
 
-    private void register(File file) {
-        this.registered.add(file);
+    private void register(boolean shutdown, File file) {
+        this.registered.get(shutdown).add(file);
     }
 
-    private void close() {
-        for (File file : registered) {
+    public void close() {
+        close(false);
+    }
+
+    public void close(boolean shutdownHook) {
+        Set<File> registeredFiles = registered.get(shutdownHook);
+        for (File file : registeredFiles) {
             deleteRecursively(file);
         }
     }
 
-    private void deleteRecursively(File file) {
+    public static void deleteRecursively(File file) {
         if (!file.exists()) {
             return;
         }
@@ -93,7 +110,7 @@ public class TempFileManager {
         file.delete();
     }
 
-    private Set<File> registered = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private Map<Boolean, Set<File>> registered = new ConcurrentHashMap<>();
 
     private File tmpDir;
 

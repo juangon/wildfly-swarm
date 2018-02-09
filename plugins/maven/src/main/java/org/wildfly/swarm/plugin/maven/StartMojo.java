@@ -114,7 +114,16 @@ public class StartMojo extends AbstractSwarmMojo {
 
         final SwarmProcess process;
         try {
+
+            File tmp;
+            try {
+                tmp = Files.createTempFile("swarm-process-file", null).toFile();
+            } catch (IOException e) {
+                throw new MojoFailureException("Error while creating process file");
+            }
+
             process = executor.withDebug(debugPort)
+                    .withProcessFile(tmp)
                     .withProperties(this.properties)
                     .withStdoutFile(this.stdoutFile != null ? this.stdoutFile.toPath() : null)
                     .withStderrFile(this.stderrFile != null ? this.stderrFile.toPath() : null)
@@ -127,14 +136,14 @@ public class StartMojo extends AbstractSwarmMojo {
                                                       .collect(Collectors.toList())))
                     .execute();
 
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            /*Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 try {
                     // Sleeping for a few millis will give time to shutdown gracefully
                     Thread.sleep(100L);
                     process.stop(10, TimeUnit.SECONDS);
                 } catch (InterruptedException e) {
                 }
-            }));
+            }));*/
             int startTimeoutSeconds;
             try {
                 startTimeoutSeconds = Integer.valueOf(this.properties.getProperty("start.timeout.seconds", "120"));
@@ -188,16 +197,8 @@ public class StartMojo extends AbstractSwarmMojo {
             finalName = finalName.substring(0, finalName.length() - 4);
         }
 
-        File tmp;
-        try {
-            tmp = Files.createTempFile("swarm-process-file", null).toFile();
-        } catch (IOException e) {
-            throw new MojoFailureException("Error while creating process file");
-        }
-
         return new SwarmExecutor()
-                .withExecutableJar(Paths.get(this.projectBuildDir, finalName + "-swarm.jar"))
-                .withProcessFile(tmp);
+                .withExecutableJar(Paths.get(this.projectBuildDir, finalName + "-swarm.jar"));
     }
 
     protected SwarmExecutor warExecutor() throws MojoFailureException {
@@ -225,6 +226,7 @@ public class StartMojo extends AbstractSwarmMojo {
     @SuppressWarnings("deprecation")
     protected SwarmExecutor executor(final Path appPath, final String name,
                                      final boolean scanDependencies) throws MojoFailureException {
+
         final SwarmExecutor executor = new SwarmExecutor()
                 .withModules(expandModules())
                 .withProperty(BootstrapProperties.APP_NAME, name)
@@ -235,6 +237,8 @@ public class StartMojo extends AbstractSwarmMojo {
         } else {
             executor.withDefaultMainClass();
         }
+
+        //getPluginContext().put("swarm-process-file", tmp);
 
         return executor;
     }

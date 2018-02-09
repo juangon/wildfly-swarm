@@ -37,6 +37,7 @@ import org.jboss.modules.ResourceLoader;
 import org.jboss.modules.ResourceLoaders;
 import org.wildfly.swarm.bootstrap.performance.Performance;
 import org.wildfly.swarm.bootstrap.util.BootstrapUtil;
+import org.wildfly.swarm.bootstrap.util.JarFileManager;
 import org.wildfly.swarm.bootstrap.util.TempFileManager;
 
 /**
@@ -147,7 +148,7 @@ public class NestedJarResourceLoader {
                 Path resourceRoot = exp.resolve(loaderPath);
                 if (!Files.isDirectory(resourceRoot) && (resourceRoot.getFileName().toString().endsWith(".jar") || resourceRoot.getFileName().toString().endsWith(".war"))) {
                     final File file = resourceRoot.toFile();
-                    final JarFile jarFile = new JarFile(file);
+                    final JarFile jarFile = JarFileManager.INSTANCE.addJarFile(file);
 
                     File tmpDir = TempFileManager.INSTANCE.newTempDirectory("nestedjarloader", null);
                     //Explode jar due to some issues in Windows on stopping (JarFiles cannot be deleted)
@@ -156,6 +157,7 @@ public class NestedJarResourceLoader {
                     jarFile.close();
 
                     return ResourceLoaders.createFileResourceLoader(loaderName, tmpDir);
+                    //return ResourceLoaders.createJarResourceLoader(loaderName, jarFile);
                 } else {
                     return ResourceLoaders.createFileResourceLoader(loaderName, resourceRoot.toFile());
                 }
@@ -164,6 +166,7 @@ public class NestedJarResourceLoader {
             if (loaderName.endsWith(".jar") || loaderName.endsWith(".war")) {
                 final File file = new File(urlString.substring(5), loaderPath);
                 final JarFile jarFile = new JarFile(file);
+                //final JarFile jarFile = JarFileManager.INSTANCE.addJarFile(file);
 
                 File tmpDir = TempFileManager.INSTANCE.newTempDirectory("nestedjarloader", null);
                 //Explode jar due to some issues in Windows on stopping (JarFiles cannot be deleted)
@@ -172,6 +175,7 @@ public class NestedJarResourceLoader {
                 jarFile.close();
 
                 return ResourceLoaders.createFileResourceLoader(loaderName, tmpDir);
+                //return ResourceLoaders.createJarResourceLoader(loaderName, jarFile);
             }
 
             return ResourceLoaders.createFileResourceLoader(

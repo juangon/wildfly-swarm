@@ -39,6 +39,7 @@ public class StopMojo extends AbstractMojo {
     @SuppressWarnings("unchecked")
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
+        System.out.println("--STOP MOJOIOOOO");
         if (this.execution.getExecutionId().equals("default-cli")) {
             getLog().error("wildfly-swarm:stop is not usable from the CLI");
             return;
@@ -51,6 +52,10 @@ public class StopMojo extends AbstractMojo {
             return;
         }
 
+        /*File processFile = (File) getPluginContext().get("swarm-process-file");
+
+        processFile.delete();*/
+
         for (SwarmProcess each : value) {
             stop(each);
         }
@@ -61,7 +66,6 @@ public class StopMojo extends AbstractMojo {
             tmp.delete();
         }
     }
-
 
     protected void stop(SwarmProcess process) throws MojoFailureException {
         if (process != null) {

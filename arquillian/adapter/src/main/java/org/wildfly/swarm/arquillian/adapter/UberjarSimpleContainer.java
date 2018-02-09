@@ -294,7 +294,7 @@ public class UberjarSimpleContainer implements SimpleContainer {
         executor.withJVMArguments(getJavaVmArgumentsList());
         executor.withExecutableJar(executable.toPath());
 
-        File workingDirectory = TempFileManager.INSTANCE.newTempDirectory("arquillian", null);
+        workingDirectory = TempFileManager.INSTANCE.newTempDirectory("arquillian", null);
         executor.withWorkingDirectory(workingDirectory.toPath());
 
         this.process = executor.execute();
@@ -356,6 +356,7 @@ public class UberjarSimpleContainer implements SimpleContainer {
     @Override
     public void stop() throws Exception {
         this.process.stop();
+        TempFileManager.deleteRecursively(workingDirectory);
     }
 
     private String ga(final MavenCoordinate coord) {
@@ -387,6 +388,22 @@ public class UberjarSimpleContainer implements SimpleContainer {
 
     }
 
+    private void deleteRecursively(File file) {
+        if (!file.exists()) {
+            return;
+        }
+        if (file.isDirectory()) {
+            File[] files = file.listFiles();
+            if (files != null) {
+                for (File child : files) {
+                    deleteRecursively(child);
+                }
+            }
+        }
+
+        file.delete();
+    }
+
     private final Class<?> testClass;
 
     private SwarmProcess process;
@@ -394,6 +411,8 @@ public class UberjarSimpleContainer implements SimpleContainer {
     private Set<String> requestedMavenArtifacts = new HashSet<>();
 
     private String javaVmArguments;
+
+    private File workingDirectory;
 
 }
 
