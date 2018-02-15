@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,6 +37,7 @@ import org.jboss.shrinkwrap.api.importer.ZipImporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.wildfly.swarm.bootstrap.env.ApplicationEnvironment;
 import org.wildfly.swarm.bootstrap.modules.MavenResolvers;
+import org.wildfly.swarm.bootstrap.util.JarFileManager;
 import org.wildfly.swarm.spi.api.ArtifactLookup;
 
 /**
@@ -64,8 +66,10 @@ public class ArtifactManager implements ArtifactLookup {
             throw SwarmMessages.MESSAGES.artifactNotFound(gav);
         }
 
+        JarFile jarFile = JarFileManager.INSTANCE.addJarFile(file);
+        System.out.println("----Added jar file:" + jarFile);
         return ShrinkWrap.create(ZipImporter.class, asName == null ? file.getName() : asName)
-                .importFrom(file)
+                .importFrom(jarFile)
                 .as(JavaArchive.class);
     }
 
@@ -89,8 +93,10 @@ public class ArtifactManager implements ArtifactLookup {
             final File artifact = new File(element);
 
             if (artifact.isFile()) {
+                JarFile jarFile = JarFileManager.INSTANCE.addJarFile(artifact);
+                System.out.println("----Added jar file:" + jarFile);
                 archives.put(artifact.getName(), ShrinkWrap.create(ZipImporter.class, artifact.getName())
-                        .importFrom(artifact)
+                        .importFrom(jarFile)
                         .as(JavaArchive.class));
             } else {
 

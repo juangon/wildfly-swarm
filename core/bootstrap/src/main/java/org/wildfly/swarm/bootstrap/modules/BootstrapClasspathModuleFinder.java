@@ -31,9 +31,11 @@ import org.wildfly.swarm.bootstrap.performance.Performance;
  *
  * @author Bob McWhirter
  */
-public class BootstrapClasspathModuleFinder implements ModuleFinder {
+public class BootstrapClasspathModuleFinder implements ModuleFinder, AutoCloseable {
 
     private static final char MODULE_SEPARATOR = '/';
+
+    private static final ModuleLoader delegateLoader = null;
 
     public String toString() {
         return getClass().getSimpleName();
@@ -41,6 +43,9 @@ public class BootstrapClasspathModuleFinder implements ModuleFinder {
 
     @Override
     public ModuleSpec findModule(String identifier, ModuleLoader delegateLoader) throws ModuleLoadException {
+
+        System.out.println("Delegate loader:" + delegateLoader);
+
         String simpleIdentifier = identifier;
         if (!identifier.contains(":")) {
             identifier = identifier + ":main";
@@ -88,6 +93,12 @@ public class BootstrapClasspathModuleFinder implements ModuleFinder {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+
+    }
+
+    @Override
+    public void close() throws Exception {
+        // TODO Auto-generated method stub
 
     }
 }

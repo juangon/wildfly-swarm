@@ -49,9 +49,9 @@ public class TempFileManager {
                 }
             }
         }
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+        /*Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             INSTANCE.close(true);
-        }));
+        }));*/
     }
 
     public File newTempDirectory(String base, String ext) throws IOException {
@@ -62,7 +62,7 @@ public class TempFileManager {
         File tmp = File.createTempFile(WFSWARM_TMP_PREFIX + base, ext, this.tmpDir);
         tmp.delete();
         tmp.mkdirs();
-        tmp.deleteOnExit();
+        //tmp.deleteOnExit();
         register(shutdownHook, tmp);
         return tmp;
     }
@@ -74,7 +74,7 @@ public class TempFileManager {
     public File newTempFile(boolean shutdownHook, String base, String ext) throws IOException {
         File tmp = File.createTempFile(WFSWARM_TMP_PREFIX + base, ext, this.tmpDir);
         tmp.delete();
-        tmp.deleteOnExit();
+        //tmp.deleteOnExit();
         register(shutdownHook, tmp);
         return tmp;
     }

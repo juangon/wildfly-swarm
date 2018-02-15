@@ -106,6 +106,7 @@ public class SwarmContentRepository implements ContentRepository, Service<Conten
                     dos.write(bytes, 0, read);
                 }
                 fos.flush();
+                dos.close();
                 sha1Bytes = messageDigest.digest();
             }
             String key = toKey(sha1Bytes);

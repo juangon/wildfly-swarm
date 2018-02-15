@@ -23,7 +23,7 @@ import org.jboss.modules.ModuleLoader;
 /**
  * @author Bob McWhirter
  */
-public class BootModuleLoader extends ModuleLoader {
+public class BootModuleLoader extends ModuleLoader implements AutoCloseable {
 
     public BootModuleLoader() throws IOException {
         super(new ModuleFinder[]{
@@ -34,5 +34,18 @@ public class BootModuleLoader extends ModuleLoader {
                 new ApplicationModuleFinder(),
                 new DynamicModuleFinder(),
         });
+    }
+
+    public void close() {
+        final ModuleFinder[] finders = getFinders();
+        for (ModuleFinder finder : finders) {
+            if (finder instanceof AutoCloseable) {
+                try {
+                    ((AutoCloseable)finder).close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 }

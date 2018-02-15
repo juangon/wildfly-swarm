@@ -287,7 +287,7 @@ public class UberjarSimpleContainer implements SimpleContainer {
         executor.withProperty("java.net.preferIPv4Stack", "true");
 
         File processFile = File.createTempFile(TempFileManager.WFSWARM_TMP_PREFIX + "mainprocessfile", null);
-        processFile.deleteOnExit();
+        //processFile.deleteOnExit();
 
         executor.withProcessFile(processFile);
 

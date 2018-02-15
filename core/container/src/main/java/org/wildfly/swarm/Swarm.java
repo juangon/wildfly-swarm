@@ -74,8 +74,11 @@ import org.wildfly.swarm.bootstrap.env.ApplicationEnvironment;
 import org.wildfly.swarm.bootstrap.logging.BackingLoggerManager;
 import org.wildfly.swarm.bootstrap.logging.BootstrapLogger;
 import org.wildfly.swarm.bootstrap.modules.BootModuleLoader;
+//import org.wildfly.swarm.bootstrap.modules.MavenResolvers;
 import org.wildfly.swarm.bootstrap.performance.Performance;
 import org.wildfly.swarm.bootstrap.util.BootstrapProperties;
+import org.wildfly.swarm.bootstrap.util.JarFileManager;
+//import org.wildfly.swarm.bootstrap.util.TempFileManager;
 import org.wildfly.swarm.cli.CommandLine;
 import org.wildfly.swarm.container.DeploymentException;
 import org.wildfly.swarm.container.config.ClassLoaderConfigLocator;
@@ -155,6 +158,17 @@ public class Swarm {
      */
     public Swarm() throws Exception {
         this(Boolean.getBoolean(SwarmProperties.DEBUG_BOOTSTRAP));
+
+        /*Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            //if (this.server != null) {
+                try {
+                    SwarmMessages.MESSAGES.shutdownRequested();
+                    stop();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            //}
+        }));*/
     }
 
     /**
@@ -437,6 +451,17 @@ public class Swarm {
         WeldShutdown shutdown = (WeldShutdown) shutdownClass.newInstance();
         shutdown.shutdown();
 
+        /*System.out.println("----Closing Module Loader in Swarm");
+        if (Module.getBootModuleLoader() instanceof AutoCloseable) {
+            System.out.println("----Closing Module Loader 2 in Swarm");
+            ((AutoCloseable) Module.getBootModuleLoader()).close();
+            System.out.println("----Closed Module Loader in Swarm");
+        }
+
+        JarFileManager.INSTANCE.close();
+        TempFileManager.INSTANCE.close();
+        MavenResolvers.close();*/
+
         return this;
     }
 
@@ -690,7 +715,8 @@ public class Swarm {
                 if (file.isDirectory()) {
                     archive = ShrinkWrap.create(ExplodedImporter.class).importDirectory(file).as(JavaArchive.class);
                 } else {
-                    archive = ShrinkWrap.create(ZipImporter.class).importFrom(file).as(JavaArchive.class);
+                    JarFile jarFile = JarFileManager.INSTANCE.addJarFile(file);
+                    archive = ShrinkWrap.create(ZipImporter.class).importFrom(jarFile).as(JavaArchive.class);
                 }
 
                 Map<ArchivePath, Node> content = archive.getContent();

@@ -41,6 +41,7 @@ import org.jboss.as.server.Bootstrap;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.Services;
 import org.jboss.dmr.ModelNode;
+import org.jboss.modules.Module;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
@@ -315,9 +316,18 @@ public class RuntimeServer implements Server {
         this.deployer.get().removeAllContent();
         this.deployer = null;
 
+        System.out.println("----Closing Module Loader");
+        if (Module.getBootModuleLoader() instanceof AutoCloseable) {
+            System.out.println("----Closing Module Loader 2");
+            ((AutoCloseable) Module.getBootModuleLoader()).close();
+            System.out.println("----Closed Module Loader");
+        }
+
         JarFileManager.INSTANCE.close();
         TempFileManager.INSTANCE.close();
         MavenResolvers.close();
+
+        System.out.println("---Server stopped");
     }
 
     private void awaitContainerTermination() {

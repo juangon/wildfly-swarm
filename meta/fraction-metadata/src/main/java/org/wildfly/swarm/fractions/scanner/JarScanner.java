@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.function.Consumer;
 
+//import org.wildfly.swarm.bootstrap.util.TempFileManager;
 import org.wildfly.swarm.spi.meta.FractionDetector;
 import org.wildfly.swarm.spi.meta.PathSource;
 
@@ -37,7 +38,8 @@ public class JarScanner implements Scanner<InputStream> {
     @Override
     public void scan(PathSource pathSource, Collection<FractionDetector<InputStream>> detectors, Consumer<File> handleFileAsZip) throws IOException {
         final File jarFile = File.createTempFile("swarmPackageDetector", ".jar");
-        jarFile.deleteOnExit();
+        //final File jarFile = TempFileManager.INSTANCE.newTempFile("swarmPackageDetector", ".jar");
+        //jarFile.deleteOnExit();
 
         try (InputStream input = pathSource.getInputStream();
                 FileOutputStream out = new FileOutputStream(jarFile)) {
@@ -45,5 +47,7 @@ public class JarScanner implements Scanner<InputStream> {
         }
 
         handleFileAsZip.accept(jarFile);
+
+        jarFile.delete();
     }
 }

@@ -30,6 +30,7 @@ public class JarFileManager {
                         try {
                             j.close();
                         } catch (IOException e) {
+                            e.printStackTrace();
                         }
                     }
                 );

@@ -48,8 +48,9 @@ public class UberJarMavenResolver implements MavenResolver, Closeable {
         //File tmp = Files.createTempFile(TempFileManager.WFSWARM_TMP_PREFIX + artifactId, DOT + packaging).toFile();
         File tmp = TempFileManager.INSTANCE.newTempFile(artifactId, DOT + packaging);
         Files.copy(in, tmp.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        System.out.println("Copied file " + tmp.getName());
-        in.close();
+        //System.out.println("Copied file " + tmp.getName());
+        //in.close();
+        printStackTrace(tmp.getName());
         return tmp;
     }
 
@@ -81,10 +82,14 @@ public class UberJarMavenResolver implements MavenResolver, Closeable {
     @Override
     public void close() throws IOException {
         resolutionCache.forEach((a, f) -> {
-                try {
-                    Files.delete(f.toPath());
-                } catch (IOException e) {
-                }
+                //try {
+                    if (!f.delete()) {
+                        //Files.delete(f.toPath());
+                        System.out.println("------File " + f.getAbsolutePath() + " can't be deleted");
+                    }
+                /*} catch (IOException e) {
+                    //e.printStackTrace();
+                }*/
         });
     }
 
@@ -101,6 +106,20 @@ public class UberJarMavenResolver implements MavenResolver, Closeable {
         }
         builder.append(pathVersion).append(separator).append(artifactId).append(HYPHEN).append(version);
         return builder.toString();
+    }
+
+    static void printStackTrace(String fileName) {
+
+        if (fileName.contains("bean-validation")) {
+            System.out.println("---Stack trace for:" + fileName);
+            Thread currentThread = Thread.currentThread();
+
+            StackTraceElement[] stackTraceElements = currentThread.getStackTrace();
+
+            for (StackTraceElement element : stackTraceElements) {
+                System.out.println(element.toString());
+            }
+        }
     }
 
     private static final Pattern snapshotPattern = Pattern.compile("-\\d{8}\\.\\d{6}-\\d+$");

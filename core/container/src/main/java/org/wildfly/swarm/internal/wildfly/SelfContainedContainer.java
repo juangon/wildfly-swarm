@@ -179,7 +179,9 @@ public final class SelfContainedContainer {
 
     private File createTmpDir() {
         try {
-            File tmpDir = File.createTempFile(TempFileManager.WFSWARM_TMP_PREFIX + "wildfly-self-contained", ".d");
+
+            //File tmpDir = File.createTempFile(TempFileManager.WFSWARM_TMP_PREFIX + "wildfly-self-contained", ".d");
+            File tmpDir = TempFileManager.INSTANCE.newTempDirectory("wildfly-self-contained", ".d");
             if (tmpDir.exists()) {
                 for (int i = 0; i < 10; ++i) {
                     if (tmpDir.exists()) {
@@ -198,8 +200,8 @@ public final class SelfContainedContainer {
                     throw new RuntimeException("Unable to create directory");
                 }
             }
-            tmpDir.mkdirs();
-            tmpDir.deleteOnExit();
+            //tmpDir.mkdirs();
+            //tmpDir.deleteOnExit();
             return tmpDir;
 
         } catch (IOException e) {
