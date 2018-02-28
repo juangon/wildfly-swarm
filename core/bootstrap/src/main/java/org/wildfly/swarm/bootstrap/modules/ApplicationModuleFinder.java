@@ -34,7 +34,6 @@ import org.jboss.modules.filter.PathFilters;
 import org.jboss.modules.maven.ArtifactCoordinates;
 import org.wildfly.swarm.bootstrap.env.ApplicationEnvironment;
 import org.wildfly.swarm.bootstrap.logging.BootstrapLogger;
-import org.wildfly.swarm.bootstrap.util.BootstrapUtil;
 import org.wildfly.swarm.bootstrap.util.JarFileManager;
 import org.wildfly.swarm.bootstrap.util.TempFileManager;
 
@@ -130,22 +129,15 @@ public class ApplicationModuleFinder extends AbstractSingleModuleFinder {
         }
 
         final String jarName = tmp.getName().toString();
-        final JarFile jarFile = new JarFile(tmp);
+        final JarFile jarFile = JarFileManager.INSTANCE.addJarFile(tmp);
 
-        File tmpDir = TempFileManager.INSTANCE.newTempDirectory(name, ext);
-
-        //Explode jar due to some issues in Windows on stopping (JarFiles cannot be deleted)
-        BootstrapUtil.explodeJar(jarFile, tmpDir.getAbsolutePath());
-
-        jarFile.close();
-        tmp.delete();
-
-        final ResourceLoader jarLoader = ResourceLoaders.createFileResourceLoader(jarName, tmpDir);
+        final ResourceLoader jarLoader = ResourceLoaders.createJarResourceLoader(jarName, jarFile);
         builder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(jarLoader));
 
         if (".war".equalsIgnoreCase(ext)) {
-            final ResourceLoader warLoader = ResourceLoaders.createFileResourceLoader(jarName + "WEBINF",
-                                                                                      new File(tmpDir.getAbsolutePath() + File.separator + "WEB-INF" + File.separator + "classes"));
+            final ResourceLoader warLoader = ResourceLoaders.createJarResourceLoader(jarName,
+                                                                                     jarFile,
+                                                                                     "WEB-INF/classes");
 
             builder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(warLoader));
         }
