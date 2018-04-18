@@ -21,12 +21,8 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 
 import org.wildfly.swarm.config.EJB3;
-import org.wildfly.swarm.config.ejb3.AsyncService;
-import org.wildfly.swarm.config.ejb3.Cache;
+import org.wildfly.swarm.config.ejb3.ChannelCreationOptions;
 import org.wildfly.swarm.config.ejb3.StrictMaxBeanInstancePool;
-import org.wildfly.swarm.config.ejb3.ThreadPool;
-import org.wildfly.swarm.config.ejb3.TimerService;
-import org.wildfly.swarm.config.ejb3.service.FileDataStore;
 import org.wildfly.swarm.spi.api.Fraction;
 import org.wildfly.swarm.spi.api.SwarmProperties;
 import org.wildfly.swarm.spi.api.annotations.Configurable;
@@ -42,6 +38,8 @@ import org.wildfly.swarm.spi.api.annotations.WildFlyExtension;
 @Configurable("swarm.ejb3")
 public class EJBFraction extends EJB3<EJBFraction> implements Fraction<EJBFraction> {
 
+    private static final String DEFAULT = "default";
+
     @PostConstruct
     public void postConstruct() {
         applyDefaults();
@@ -56,32 +54,68 @@ public class EJBFraction extends EJB3<EJBFraction> implements Fraction<EJBFracti
         threadPoolSettings.put("time", "100");
         threadPoolSettings.put("unit", "MILLISECONDS");
 
-        defaultStatefulBeanAccessTimeout(5000L)
-                .defaultSingletonBeanAccessTimeout(5000L)
+        this
+                .defaultSlsbInstancePool("slsb-strict-max-pool")
+                .defaultStatefulBeanAccessTimeout(5000L)
                 .defaultSfsbCache("simple")
+                .defaultSfsbPassivationDisabledCache("simple")
+                .defaultSingletonBeanAccessTimeout(5000L)
+                .defaultResourceAdapterName(SwarmProperties.propertyVar("ejb.resource-adapter-name", "activemq-ra.rar"))
+                .defaultMdbInstancePool("mdb-strict-max-pool")
+                .strictMaxBeanInstancePool("slsb-strict-max-pool", pool -> {
+                    pool.deriveSize(StrictMaxBeanInstancePool.DeriveSize.FROM_WORKER_POOLS);
+                    pool.timeout(5L);
+                    pool.timeoutUnit(StrictMaxBeanInstancePool.TimeoutUnit.MINUTES);
+                })
+                .strictMaxBeanInstancePool("mdb-strict-max-pool", pool -> {
+                        pool.deriveSize(StrictMaxBeanInstancePool.DeriveSize.FROM_CPU_COUNT);
+                        pool.timeout(5L);
+                        pool.timeoutUnit(StrictMaxBeanInstancePool.TimeoutUnit.MINUTES);
+                })
+                .cache("simple")
+                .cache("distributable", cache -> {
+                    cache.alias("passivating");
+                    cache.alias("clustered");
+                    cache.passivationStore("infinispan");
+                })
+                .passivationStore("infinispan", store -> {
+                    store.cacheContainer("ejb");
+                    store.maxSize(10000);
+                })
+                .asyncService(async -> {
+                    async.threadPoolName(DEFAULT);
+                })
+                .timerService(timer -> {
+                    timer.threadPoolName(DEFAULT);
+                    timer.defaultDataStore("default-file-store");
+                    timer.fileDataStore("default-file-store", store -> {
+                        store.path("timer-service-data");
+                        store.relativeTo("jboss.server.data.dir"); // TODO
+                    });
+                })
+                .remoteService(remote -> {
+                    remote.connectorRef("http-remoting-connector");
+                    remote.threadPoolName(DEFAULT);
+                    remote.channelCreationOptions("READ_TIMEOUT", opt -> {
+                        opt.value(SwarmProperties.propertyVar("prop.remoting-connector.read.timeout", "20"));
+                        opt.type(ChannelCreationOptions.Type.XNIO);
+                    });
+                    remote.channelCreationOptions("MAX_OUTBOUND_MESSAGES", opt -> {
+                        opt.value("1234");
+                        opt.type(ChannelCreationOptions.Type.REMOTING);
+                    });
+                })
+                .threadPool(DEFAULT, threadPool -> {
+                    threadPool.maxThreads(10);
+                    threadPool.keepaliveTime(threadPoolSettings);
+                })
+                .iiopService(iiop -> {
+                    iiop.enableByDefault(false);
+                    iiop.useQualifiedName(false);
+                })
                 .defaultSecurityDomain("other")
                 .defaultMissingMethodPermissionsDenyAccess(true)
-                .logSystemExceptions(true)
-                .defaultResourceAdapterName(SwarmProperties.propertyVar("$ejb.resource-adapter-name", "activemq-ra.rar"))
-                .strictMaxBeanInstancePool(new StrictMaxBeanInstancePool("slsb-strict-max-pool")
-                                                   .maxPoolSize(20)
-                                                   .timeout(5L)
-                                                   .timeoutUnit(StrictMaxBeanInstancePool.TimeoutUnit.MINUTES))
-                .strictMaxBeanInstancePool(new StrictMaxBeanInstancePool("mdb-strict-max-pool")
-                                                   .maxPoolSize(20)
-                                                   .timeout(5L)
-                                                   .timeoutUnit(StrictMaxBeanInstancePool.TimeoutUnit.MINUTES))
-                .cache(new Cache("simple"))
-                .asyncService(new AsyncService().threadPoolName("default"))
-                .timerService(new TimerService()
-                                      .threadPoolName("default")
-                                      .defaultDataStore("default-file-store")
-                                      .fileDataStore(new FileDataStore("default-file-store")
-                                                             .path("timer-service-data")
-                                                             .relativeTo("jboss.server.data.dir")))
-                .threadPool(new ThreadPool("default")
-                                    .maxThreads(10)
-                                    .keepaliveTime(threadPoolSettings));
+                .logSystemExceptions(true);
 
         return this;
     }
