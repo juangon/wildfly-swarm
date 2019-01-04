@@ -74,10 +74,11 @@ public class UberjarSimpleContainer implements SimpleContainer {
 
     private final DeploymentContext deploymentContext;
 
-    public UberjarSimpleContainer(ContainerContext containerContext, DeploymentContext deploymentContext, Class<?> testClass) {
+    public UberjarSimpleContainer(ContainerContext containerContext, DeploymentContext deploymentContext, Class<?> testClass, String fractionDetectionMode) {
         this.containerContext = containerContext;
         this.deploymentContext = deploymentContext;
         this.testClass = testClass;
+        this.fractionDetectionMode = fractionDetectionMode;
     }
 
     @Override
@@ -158,7 +159,7 @@ public class UberjarSimpleContainer implements SimpleContainer {
         final ShrinkwrapArtifactResolvingHelper resolvingHelper = ShrinkwrapArtifactResolvingHelper.defaultInstance();
 
         BuildTool tool = new BuildTool(resolvingHelper)
-                .fractionDetectionMode(BuildTool.FractionDetectionMode.when_missing)
+                .fractionDetectionMode(BuildTool.FractionDetectionMode.valueOf(fractionDetectionMode))
                 .bundleDependencies(false);
 
         String additionalModules = System.getProperty(SwarmInternalProperties.BUILD_MODULES);
@@ -399,5 +400,7 @@ public class UberjarSimpleContainer implements SimpleContainer {
     private String javaVmArguments;
 
     private File workingDirectory;
+
+    private String fractionDetectionMode;
 }
 

@@ -73,7 +73,7 @@ public class WildFlySwarmContainer extends DaemonDeployableContainerBase<DaemonC
             setTimeout(startupTimeout.value());
         }
 
-        this.delegateContainer = new UberjarSimpleContainer(this.containerContext.get(), this.deploymentContext.get(), this.testClass);
+        this.delegateContainer = new UberjarSimpleContainer(this.containerContext.get(), this.deploymentContext.get(), this.testClass, this.getFractionDetectionMode());
 
         try {
             this.delegateContainer

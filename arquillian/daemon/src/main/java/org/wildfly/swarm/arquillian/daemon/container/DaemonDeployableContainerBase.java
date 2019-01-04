@@ -54,6 +54,7 @@ public abstract class DaemonDeployableContainerBase<CONFIGTYPE extends DaemonCon
         final InetSocketAddress address = new InetSocketAddress(remoteHost, Integer.parseInt(remotePort));
         this.remoteAddress = address;
         this.javaVmArguments = configuration.getJavaVmArguments();
+        this.fractionDetectionMode = configuration.getFractionDetectionMode();
     }
 
     public void setTimeout(int timeout) {
@@ -200,6 +201,13 @@ public abstract class DaemonDeployableContainerBase<CONFIGTYPE extends DaemonCon
     }
 
     /**
+     * @return the fractionDetectionMode
+     */
+    protected final String getFractionDetectionMode() {
+        return fractionDetectionMode;
+    }
+
+    /**
      * Safely close remote resources
      */
     private void closeRemoteResources() {
@@ -260,5 +268,7 @@ public abstract class DaemonDeployableContainerBase<CONFIGTYPE extends DaemonCon
     private int timeout = 10;
 
     private String javaVmArguments;
+
+    private String fractionDetectionMode;
 
 }
