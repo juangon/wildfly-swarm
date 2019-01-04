@@ -36,6 +36,9 @@ public class DaemonContainerConfigurationBase implements ContainerConfiguration 
         if (port == null || port.length() == 0) {
             this.port = "12345";
         }
+        if (fractionDetectionMode == null || fractionDetectionMode.length() == 0) {
+            this.fractionDetectionMode = "when_missing";
+        }
     }
 
     /**
@@ -74,11 +77,21 @@ public class DaemonContainerConfigurationBase implements ContainerConfiguration 
         this.javaVmArguments = javaVmArguments;
     }
 
+    public String getFractionDetectionMode() {
+        return fractionDetectionMode;
+    }
+
+    public void setFractionDetectionMode(String fractionDetectionMode) {
+        this.fractionDetectionMode = fractionDetectionMode;
+    }
+
     // Properties
     private String host;
 
     private String port;
 
     private String javaVmArguments;
+
+    private String fractionDetectionMode;
 
 }
