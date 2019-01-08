@@ -29,7 +29,6 @@ import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.descriptor.api.Descriptor;
 import org.wildfly.swarm.arquillian.StartupTimeout;
-import org.wildfly.swarm.arquillian.daemon.container.DaemonContainerConfigurationBase;
 import org.wildfly.swarm.arquillian.daemon.container.DaemonDeployableContainerBase;
 import org.wildfly.swarm.bootstrap.util.BootstrapUtil;
 
@@ -37,7 +36,7 @@ import org.wildfly.swarm.bootstrap.util.BootstrapUtil;
  * @author Bob McWhirter
  * @author Toby Crawley
  */
-public class WildFlySwarmContainer extends DaemonDeployableContainerBase<DaemonContainerConfigurationBase> {
+public class WildFlySwarmContainer extends DaemonDeployableContainerBase<WildFlySwarmContainerConfiguration> {
 
     @Inject
     Instance<ContainerContext> containerContext;
@@ -47,8 +46,14 @@ public class WildFlySwarmContainer extends DaemonDeployableContainerBase<DaemonC
 
 
     @Override
-    public Class<DaemonContainerConfigurationBase> getConfigurationClass() {
-        return DaemonContainerConfigurationBase.class;
+    public void setup(final WildFlySwarmContainerConfiguration configuration) {
+        super.setup(configuration);
+        this.fractionDetectionMode = configuration.getFractionDetectionMode();
+    }
+
+    @Override
+    public Class<WildFlySwarmContainerConfiguration> getConfigurationClass() {
+        return WildFlySwarmContainerConfiguration.class;
     }
 
     @Override
@@ -113,10 +118,19 @@ public class WildFlySwarmContainer extends DaemonDeployableContainerBase<DaemonC
     public void undeploy(Descriptor descriptor) throws DeploymentException {
     }
 
+    /**
+     * @return the fractionDetectionMode
+     */
+    protected final String getFractionDetectionMode() {
+        return fractionDetectionMode;
+    }
+
     private Set<String> requestedMavenArtifacts = new HashSet<>();
 
     private SimpleContainer delegateContainer;
 
     private Class<?> testClass;
+
+    private String fractionDetectionMode;
 
 }

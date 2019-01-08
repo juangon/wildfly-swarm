@@ -15,10 +15,33 @@
  */
 package org.wildfly.swarm.arquillian.adapter;
 
+import org.jboss.arquillian.container.spi.ConfigurationException;
 import org.wildfly.swarm.arquillian.daemon.container.DaemonContainerConfigurationBase;
 
 /**
  * @author Bob McWhirter
  */
 public class WildFlySwarmContainerConfiguration extends DaemonContainerConfigurationBase {
+
+    @Override
+    public void validate() throws ConfigurationException {
+        super.validate();
+
+        System.out.print("-------FRACTIONDETECTIONMODE:" + this.fractionDetectionMode);
+        if (fractionDetectionMode == null || fractionDetectionMode.length() == 0
+                || (!fractionDetectionMode.equals("force") && !fractionDetectionMode.equals("never"))) {
+            this.fractionDetectionMode = "when_missing";
+        }
+    }
+
+    public String getFractionDetectionMode() {
+        return fractionDetectionMode;
+    }
+
+    public void setFractionDetectionMode(String fractionDetectionMode) {
+        this.fractionDetectionMode = fractionDetectionMode;
+    }
+
+    private String fractionDetectionMode;
+
 }
